@@ -35,38 +35,25 @@ function EditQuizPage() {
   const handleSaveQuiz = async (status) => {
     const quizDocRef = doc(collection(db, "tbl_quizzes"));
 
-    // Save quiz details
+    // Create an array of questions with all the details in one place
+    const questionsData = selectedQuestions.map((question, index) => ({
+      Question_Text: question.Question_Text,
+      Question_Type: question.Question_Type,
+      Difficulty_Level: question.Difficulty_Level,
+      Choices: question.Choices,
+      Points: pointsPerQuestion[index],
+      Timer: timersPerQuestion[index],
+    }));
+
+    // Save quiz details, including questions as an array
     await setDoc(quizDocRef, {
       Quiz_Name: quizName,
       Grade_Level: gradeLevel,
       Creation_Date: serverTimestamp(),
       Status: status,
-      Number_Of_Questions: selectedQuestions.length
+      Number_Of_Questions: selectedQuestions.length,
+      Questions: questionsData,
     });
-
-    // Save questions related to this quiz in the subcollection
-    const quizQuestionsRef = collection(quizDocRef, "Sub_Quiz_Questions");
-    for (let i = 0; i < selectedQuestions.length; i++) {
-      const question = selectedQuestions[i];
-      const questionDocRef = doc(quizQuestionsRef);
-      await setDoc(questionDocRef, {
-        Question_ID: question.id,
-        Points: pointsPerQuestion[i],
-        Timer: timersPerQuestion[i]
-      });
-    }
-
-    // Save questions in tbl_quizQuestions
-    for (let i = 0; i < selectedQuestions.length; i++) {
-      const question = selectedQuestions[i];
-      const questionDocRef = doc(collection(db, "tbl_quizQuestions"));
-      await setDoc(questionDocRef, {
-        Question_Text: question.Question_Text,
-        Question_Type: question.Question_Type,
-        Difficulty_Level: question.Difficulty_Level,
-        Choices: question.Choices
-      });
-    }
 
     // Navigate to the Library page
     navigate("/Library");
@@ -152,7 +139,7 @@ function EditQuizPage() {
                         onChange={e => handleTimerSelection(e.target.value, index)}>
                   <option value="15 seconds">15 seconds</option>
                   <option value="30 seconds">30 seconds</option>
-                  <option value="1 min">1 min</option>
+                  <option value="1 minute">1 min</option>
                 </select>
               </div>
             </div>
