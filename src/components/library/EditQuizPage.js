@@ -1,33 +1,84 @@
+import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from "react-router-dom";
+import { getFirestore, doc, setDoc, collection } from "firebase/firestore";
 
 function EditQuizPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { selectedQuestions, quizName, gradeLevel, creationTime } = location.state || { selectedQuestions: [] };
 
-  console.log("Selected Questions:", selectedQuestions); // Log selected questions to check their structure
+  const db = getFirestore();
 
-  const handleDraftViewClick = () => {
-    navigate("/Library/Draft/View"); // Redirect to the specified path
+  // State to track points for each question
+  const [pointsPerQuestion, setPointsPerQuestion] = useState(selectedQuestions.map(() => 1)); // Initialize with 1 point per question as default
+  const [timersPerQuestion, setTimersPerQuestion] = useState(selectedQuestions.map(() => "30 seconds")); // Initialize with 30 seconds per question as default
+  const [totalPoints, setTotalPoints] = useState(pointsPerQuestion.reduce((acc, curr) => acc + curr, 0));
+
+  useEffect(() => {
+    // Recalculate total points whenever points per question change
+    setTotalPoints(pointsPerQuestion.reduce((acc, curr) => acc + curr, 0));
+  }, [pointsPerQuestion]);
+
+  const handlePointSelection = (points, index) => {
+    const newPoints = [...pointsPerQuestion];
+    newPoints[index] = parseInt(points);
+    setPointsPerQuestion(newPoints);
   };
 
-  const handlePublishViewClick = () => {
-    navigate("/Library/Publish/View"); // Redirect to the specified path
+  const handleTimerSelection = (timer, index) => {
+    const newTimers = [...timersPerQuestion];
+    newTimers[index] = timer;
+    setTimersPerQuestion(newTimers);
+  };
+
+  const handleSaveQuiz = async (status) => {
+    const quizDocRef = doc(collection(db, "tbl_quizzes"));
+
+    // Save quiz details
+    await setDoc(quizDocRef, {
+      Quiz_Name: quizName,
+      Grade_Level: gradeLevel,
+      Creation_Time: creationTime || new Date(),
+      Status: status,
+      Number_Of_Questions: selectedQuestions.length
+    });
+
+    // Save questions related to this quiz in the subcollection
+    const quizQuestionsRef = collection(quizDocRef, "Sub_Quiz_Questions");
+    for (let i = 0; i < selectedQuestions.length; i++) {
+      const question = selectedQuestions[i];
+      const questionDocRef = doc(quizQuestionsRef);
+      await setDoc(questionDocRef, {
+        Question_ID: question.id,
+        Points: pointsPerQuestion[i],
+        Timer: timersPerQuestion[i]
+      });
+    }
+
+    // Save questions in tbl_quizQuestions
+    for (let i = 0; i < selectedQuestions.length; i++) {
+      const question = selectedQuestions[i];
+      const questionDocRef = doc(collection(db, "tbl_quizQuestions"));
+      await setDoc(questionDocRef, {
+        Question_Text: question.Question_Text,
+        Question_Type: question.Question_Type,
+        Difficulty_Level: question.Difficulty_Level,
+        Choices: question.Choices
+      });
+    }
+
+    // Navigate to the Library page
+    navigate("/Library");
   };
 
   return (
     <div className="flex flex-col gap-4 min-h-screen pt-5 pb-5 bg-custom-brownbg md:p-6 md:pb-10">
-      {/* White Container */}
       <div className="bg-white p-6 md:p-6 rounded-md shadow-custom-darkblue mx-2 md:mx-6 flex flex-col gap-4">
-        {/* Image and Text Content */}
         <div className="flex flex-row items-center gap-4">
           <div className="md:flex-col md:flex md:items-center md:justify-center">
-            {/* Image Placeholder */}
             <div className="w-24 h-24 md:w-20 md:h-20 bg-gray-200 rounded-md flex items-center justify-center">
               <span className="text-gray-500">Image Here</span>
             </div>
-
-            {/* Upload Image Button for Laptop/Desktop */}
             <div className="hidden md:flex md:flex-col md:items-center md:mt-2">
               <button className="bg-gradient-to-r from-midp to-pink text-custom-textcolor p-1 text-sm md:text-xs font-bold rounded-md shadow-md hover:bg-yellow-600">
                 Upload Image
@@ -35,34 +86,32 @@ function EditQuizPage() {
             </div>
           </div>
 
-          {/* Text Content */}
           <div className="flex-1 flex flex-col md:flex-row md:items-start md:justify-between md:w-full">
             <div className="flex-1 flex flex-col items-start">
               <h2 className="text-custom-brownnav text-base md:text-2xl font-bold">
-                {quizName}  {/* Display quiz name */}
+                {quizName}
               </h2>
               <span className="text-custom-brownnav text-sm md:text-xl">
                 {selectedQuestions.length} questions
               </span>
               <span className="text-custom-brownnav text-xs md:text-base">
-                {gradeLevel}  {/* Display grade level */}
+                {gradeLevel}
               </span>
               <span className="text-custom-brownnav text-xs md:text-base">
-                {creationTime}  {/* Display creation time */}
+                {creationTime}
               </span>
             </div>
 
-            {/* Buttons for Laptop/Desktop */}
             <div className="hidden md:flex md:flex-row md:gap-4 md:items-end">
               <button
                 className="bg-gradient-to-r from-midp to-pink text-custom-textcolor px-4 py-2 text-sm md:text-base font-bold rounded-md shadow-md hover:bg-yellow-600"
-                onClick={handleDraftViewClick}
+                onClick={() => handleSaveQuiz("draft")}
               >
                 Draft
               </button>
               <button
                 className="bg-gradient-to-r from-midp to-pink text-custom-textcolor px-4 py-2 text-sm md:text-base font-bold rounded-md shadow-md hover:bg-yellow-600"
-                onClick={handlePublishViewClick}
+                onClick={() => handleSaveQuiz("published")}
               >
                 Publish
               </button>
@@ -71,15 +120,13 @@ function EditQuizPage() {
         </div>
       </div>
 
-      {/* Questions Display */}
       <div className="bg-gradient-to-r from-midp to-pink p-6 md:p-6 rounded-md shadow-custom-darkblue mx-2 md:mx-6 flex flex-col gap-4">
         <div className="flex items-baseline gap-4">
           <h2 className="text-custom-brownbg text-left text-xl md:text-2xl font-bold">
             {selectedQuestions.length} Questions
           </h2>
-          {/*POINTS DISPLAY*/}
           <span className="text-custom-brownbg font-semibold text-base md:text-lg">
-            ({selectedQuestions.length} points)   
+            ({totalPoints} points)
           </span>
         </div>
 
@@ -91,18 +138,20 @@ function EditQuizPage() {
               </span>
 
               <div className="flex flex-row w-full md:w-1/2 gap-2">
-                <select className="w-1/2 p-1 md:p-2 text-xs md:text-base border border-gray-900 rounded-md">
-                  <option value="" disabled selected>Select points</option>
-                  <option value="category1">1 point</option>
-                  <option value="category2">2 points</option>
-                  <option value="category3">3 points</option>
+                <select className="w-1/2 p-1 md:p-2 text-xs md:text-base border border-gray-900 rounded-md"
+                        value={pointsPerQuestion[index]}
+                        onChange={e => handlePointSelection(e.target.value, index)}>
+                  <option value="1">1 point</option>
+                  <option value="2">2 points</option>
+                  <option value="3">3 points</option>
                 </select>
 
-                <select className="w-1/2 p-1 md:p-2 text-xs md:text-base border border-gray-900 rounded-md">
-                  <option value="" disabled selected>Select timer</option>
-                  <option value="status1">15 seconds</option>
-                  <option value="status2">30 seconds</option>
-                  <option value="status3">1 min</option>
+                <select className="w-1/2 p-1 md:p-2 text-xs md:text-base border border-gray-900 rounded-md"
+                        value={timersPerQuestion[index]}
+                        onChange={e => handleTimerSelection(e.target.value, index)}>
+                  <option value="15 seconds">15 seconds</option>
+                  <option value="30 seconds">30 seconds</option>
+                  <option value="1 min">1 min</option>
                 </select>
               </div>
             </div>
@@ -122,7 +171,7 @@ function EditQuizPage() {
                   key={choiceIndex} 
                   className={`text-gray-900 text-left font-semibold text-sm md:text-lg ${choice.Is_Correct ? 'border-2 rounded-md px-2 border-pink' : ''}`}
                 >
-                  {choice.Choice_Text}  {/* Access the choice text */}
+                  {choice.Choice_Text}
                 </span>
               ))}
             </div>
