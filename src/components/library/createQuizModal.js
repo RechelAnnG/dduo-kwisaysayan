@@ -94,10 +94,13 @@ export default function CreateQuizModal({ createquizmodal, createquiztoggleModal
               className="border border-custom-brownnav rounded-md px-4 py-2 text-custom-brownnav"
             >
               <option value="" disabled>Grade level</option>
-              <option value="7">7</option>
-              <option value="8">8</option>
-              <option value="9">9</option>
-              <option value="10">10</option>
+              <option value="Grade 4">4</option>
+              <option value="Grade 5">5</option>
+              <option value="Grade 6">6</option>
+              <option value="Grade 7">7</option>
+              <option value="Grade 8">8</option>
+              <option value="Grade 9">9</option>
+              <option value="Grade 10">10</option>
             </select>
           </div>
 

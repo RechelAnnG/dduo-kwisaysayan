@@ -168,6 +168,9 @@ const filteredQuestions = questions.filter((question) => {
                 className="w-full md:w-1/2 p-1 md:p-2 text-xs md:text-base border border-custom-brownnav rounded-md"
               >
                 <option value="All">All</option> {/* Add 'All' option */}
+                <option value="Grade 4">Grade 4</option>
+                <option value="Grade 5">Grade 5</option>
+                <option value="Grade 6">Grade 6</option>
                 <option value="Grade 7">Grade 7</option>
                 <option value="Grade 8">Grade 8</option>
                 <option value="Grade 9">Grade 9</option>

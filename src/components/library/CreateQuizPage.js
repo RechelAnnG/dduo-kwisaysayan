@@ -10,6 +10,7 @@ function CreateQuizPage() {
   const { quizName, gradeLevel, questionBankId } = location.state || {};
 
   const [questions, setQuestions] = useState([]);
+  const [selectedQuestions, setSelectedQuestions] = useState({});
 
   useEffect(() => {
     const fetchQuestions = async () => {
@@ -21,10 +22,68 @@ function CreateQuizPage() {
             where("Question_Bank_ID", "==", questionBankId)
           );
           const querySnapshot = await getDocs(q);
-          const fetchedQuestions = querySnapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
+
+          // Fetch questions and their answers
+          const fetchedQuestions = await Promise.all(querySnapshot.docs.map(async (doc) => {
+            const questionData = {
+              id: doc.id,
+              ...doc.data(),
+            };
+
+            // Initialize Choices as an empty array
+            let choices = [];
+
+            // If the question type is Multiple Choice, fetch choices
+            if (questionData.Question_Type === "Multiple Choice") {
+              const choicesCollection = collection(db, "tbl_choices");
+              const choicesQuery = query(
+                choicesCollection,
+                where("Question_ID", "==", questionData.id)
+              );
+              const choicesSnapshot = await getDocs(choicesQuery);
+              choices = choicesSnapshot.docs.map(choiceDoc => ({
+                id: choiceDoc.id,
+                ...choiceDoc.data(),
+              }));
+            } else if (
+              questionData.Question_Type === "True or False" ||
+              questionData.Question_Type === "Yes or No"
+            ) {
+              // If the question type is True or False / Yes or No, fetch choices from tbl_choices
+              const choicesCollection = collection(db, "tbl_choices");
+              const choicesQuery = query(
+                choicesCollection,
+                where("Question_ID", "==", questionData.id)
+              );
+              const choicesSnapshot = await getDocs(choicesQuery);
+              choices = choicesSnapshot.docs
+                .map(choiceDoc => choiceDoc.data())
+                .sort((a, b) => (a.Choice_Text === "True" || a.Choice_Text === "Yes" ? -1 : 1)); // Ensure consistent order of options with True/Yes first
+            } else {
+              // If the question type is Identification, fetch answers
+              const answersCollection = collection(db, "tbl_answers");
+              const answersQuery = query(
+                answersCollection,
+                where("Question_ID", "==", questionData.id)
+              );
+              const answersSnapshot = await getDocs(answersQuery);
+              const answers = answersSnapshot.docs.map(answerDoc => ({
+                id: answerDoc.id,
+                ...answerDoc.data(),
+              }));
+
+              // Set the choices based on the answers fetched
+              choices = answers.map(answer => ({
+                Choice_Text: answer.Answer_text, // Use the answer text
+                Is_Correct: answer.Answer_text === questionData.Correct_Answer, // Assuming you have a Correct_Answer field in the question
+              }));
+            }
+
+            console.log("Fetched Question with Choices:", { ...questionData, Choices: choices }); // Log each question with its choices
+
+            return { ...questionData, Choices: choices }; // Add choices to question data
           }));
+
           setQuestions(fetchedQuestions);
         }
       } catch (error) {
@@ -35,8 +94,70 @@ function CreateQuizPage() {
     fetchQuestions();
   }, [questionBankId]);
 
-  const handleCreateClick = () => {
-    navigate("/Library/EditQuiz");
+  const handleCreateClick = async () => {
+    const allSelectedQuestions = [];
+
+    for (const [difficulty, types] of Object.entries(selectedQuestions)) {
+      for (const [questionType, count] of Object.entries(types)) {
+        const questionSubset = questions.filter(
+          (q) => q.Difficulty_Level === difficulty && q.Question_Type === questionType
+        );
+        const shuffledSubset = fisherYatesShuffle(questionSubset);
+        allSelectedQuestions.push(...shuffledSubset.slice(0, count));
+      }
+    }
+
+    console.log("Selected Questions:", allSelectedQuestions); // Log selected questions
+
+    // Call the Python backend to shuffle questions
+    try {
+      const response = await fetch('http://localhost:5000/shuffle-questions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ questions: allSelectedQuestions }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error:", errorData);
+        return; // Exit if there's an error
+      }
+
+      const shuffledQuestions = await response.json();
+      console.log("Shuffled Questions:", shuffledQuestions); // Log shuffled questions
+
+      navigate("/Library/EditQuiz", {
+        state: {
+          selectedQuestions: shuffledQuestions,
+          quizName: quizName,         // Pass quiz name
+          gradeLevel: gradeLevel,     // Pass grade level
+          creationTime: new Date().toLocaleString(), // Pass creation time
+        },
+      });
+    } catch (error) {
+      console.error("Error shuffling questions:", error);
+    }
+  };
+
+  const fisherYatesShuffle = (array) => {
+    const shuffledArray = [...array];
+    for (let i = shuffledArray.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffledArray[i], shuffledArray[j]] = [shuffledArray[j], shuffledArray[i]];
+    }
+    return shuffledArray;
+  };
+
+  const handleQuestionCountChange = (difficulty, questionType, count) => {
+    setSelectedQuestions((prev) => ({
+      ...prev,
+      [difficulty]: {
+        ...prev[difficulty],
+        [questionType]: count,
+      },
+    }));
   };
 
   const renderQuestions = (difficulty, questionType) => {
@@ -92,9 +213,10 @@ function CreateQuizPage() {
                             <label className="text-custom-brownnav text-left text-sm md:text-lg font-semibold mb-2 md:mb-0">
                               Pick
                             </label>
-                            {/*number inputbox*/}
                             <input
                               type="number"
+                              min="0"
+                              onChange={(e) => handleQuestionCountChange(difficulty, questionType, parseInt(e.target.value))}
                               className="w-9 md:w-14 p-2 md:p-2 text-xs md:text-base border border-custom-brownnav rounded-md"
                             />
                             <label className="text-custom-brownnav text-left text-sm md:text-lg font-semibold mb-2 md:mb-0 md:mr-4">
