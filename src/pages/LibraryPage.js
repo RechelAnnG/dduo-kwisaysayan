@@ -1,14 +1,47 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
 import CreateQuizModal from "../components/library/createQuizModal";
+import { getFirestore, collection, getDocs } from "firebase/firestore";
 
 function LibraryPage() {
   const navigate = useNavigate(); // Initialize navigate function
+  const db = getFirestore();
   const [selected, setSelected] = useState("Published");
   const [createquizmodal, createquizsetModal] = useState(false);
   const createquiztoggleModal = () => {
     createquizsetModal(!createquizmodal);
   };
+  const [quizzes, setQuizzes] = useState([]);
+  const [sortOrder, setSortOrder] = useState("mostRecent");
+  const [selectedGradeLevel, setSelectedGradeLevel] = useState("");
+
+  useEffect(() => {
+    const fetchQuizzes = async () => {
+      const querySnapshot = await getDocs(collection(db, "tbl_quizzes"));
+      const quizzesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+      // Filter by status
+      let filteredQuizzes = quizzesData.filter(quiz => quiz.Status.toLowerCase() === selected.toLowerCase());
+
+      // Filter by grade level
+      if (selectedGradeLevel && selectedGradeLevel !== "All") {
+        filteredQuizzes = filteredQuizzes.filter(quiz => quiz.Grade_Level === selectedGradeLevel);
+      }
+
+      // Sort based on selected order
+      if (sortOrder === "mostRecent") {
+        filteredQuizzes.sort((a, b) => b.Creation_Date.toDate() - a.Creation_Date.toDate());
+      } else if (sortOrder === "leastRecent") {
+        filteredQuizzes.sort((a, b) => a.Creation_Date.toDate() - b.Creation_Date.toDate());
+      } else if (sortOrder === "alphabetical") {
+        filteredQuizzes.sort((a, b) => a.Quiz_Name.localeCompare(b.Quiz_Name));
+      }
+
+      setQuizzes(filteredQuizzes);
+    };
+
+    fetchQuizzes();
+  }, [selected, sortOrder, selectedGradeLevel]);
 
   return (
     <div className="flex-1 h-screen bg-custom-textcolor pb-4 md:pb-10">
@@ -58,21 +91,29 @@ function LibraryPage() {
               {/* Dropdown 1 */}
               <select
                 className="w-1/2 p-1 md:p-2 text-xs md:text-base border border-custom-brownnav rounded-md"
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value)}
               >
-                <option value="">Select Category</option>
-                <option value="category1">Category 1</option>
-                <option value="category2">Category 2</option>
-                <option value="category3">Category 3</option>
+                <option value="mostRecent">Most Recent</option>
+                <option value="leastRecent">Least Recent</option>
+                <option value="alphabetical">Alphabetical</option>
               </select>
 
               {/* Dropdown 2 */}
               <select
                 className="w-1/2 p-1 md:p-2 text-xs md:text-base border border-custom-brownnav rounded-md"
+                value={selectedGradeLevel}
+                onChange={(e) => setSelectedGradeLevel(e.target.value)}
               >
-                <option value="">Select Status</option>
-                <option value="status1">Status 1</option>
-                <option value="status2">Status 2</option>
-                <option value="status3">Status 3</option>
+                <option value="" disabled>Select grade level</option>
+                <option value="All">All</option>
+                <option value="Grade 4">Grade 4</option>
+                <option value="Grade 5">Grade 5</option>
+                <option value="Grade 6">Grade 6</option>
+                <option value="Grade 7">Grade 7</option>
+                <option value="Grade 8">Grade 8</option>
+                <option value="Grade 9">Grade 9</option>
+                <option value="Grade 10">Grade 10</option>
               </select>
             </div>
           </div>
@@ -89,95 +130,53 @@ function LibraryPage() {
         </button>
       </div>
 
-      {/* White Container (Published) */}
-      {selected === "Published" && (
-        <div className="bg-white p-6 md:p-6  rounded-md shadow-custom-darkblue mx-4 md:mx-6 mt-4 flex flex-col gap-4">
-          {/* Image and Text Content */}
-          <div className="flex flex-row items-center gap-4">
-            {/* Image Placeholder */}
-            <div className="w-24 h-24 md:w-28 md:h-28 bg-gray-200 rounded-md flex items-center justify-center">
-              <span className="text-gray-500">Image Here</span>
-            </div>
-
-            {/* Text Content */}
-            <div className="flex-1 flex flex-col md:flex-row md:items-center md:justify-between md:w-full">
-              <div className="flex-1 flex flex-col items-start">
-                <h2 className="text-custom-brownnav text-base md:text-2xl font-bold">
-                  Kabihasnang Asya
-                </h2>
-                <span className="text-custom-brownnav text-sm md:text-xl">
-                  2 questions
-                </span>
-                <span className="text-custom-brownnav text-xs md:text-base">
-                  4th Grade
-                </span>
-                <span className="text-custom-brownnav text-xs md:text-base">
-                  4 hours ago
-                </span>
+      {/* Quizzes Display */}
+      {quizzes.map((quiz) => {
+        console.log(quiz.Creation_Date); // Log the Creation_Date for each quiz
+        return (
+          <div key={quiz.id} className="bg-white p-6 md:p-6 rounded-md shadow-custom-darkblue mx-4 md:mx-6 mt-4 flex flex-col gap-4">
+            {/* Image and Text Content */}
+            <div className="flex flex-row items-center gap-4">
+              {/* Image Placeholder */}
+              <div className="w-24 h-24 md:w-28 md:h-28 bg-gray-200 rounded-md flex items-center justify-center">
+                <span className="text-gray-500">Image Here</span>
               </div>
 
-              {/* View Button for Laptop/Desktop */}
-              <div className="hidden md:flex md:justify-center md:items-center md:ml-auto">
-                <button className="bg-gradient-to-r from-midp to-pink text-custom-textcolor  px-4 py-2 text-sm md:text-base font-bold rounded-md shadow-md hover:bg-yellow-600">
-                  View
-                </button>
+              {/* Text Content */}
+              <div className="flex-1 flex flex-col md:flex-row md:items-center md:justify-between md:w-full">
+                <div className="flex-1 flex flex-col items-start">
+                  <h2 className="text-custom-brownnav text-base md:text-2xl font-bold">
+                    {quiz.Quiz_Name}
+                  </h2>
+                  <span className="text-custom-brownnav text-sm md:text-xl">
+                    {quiz.Number_Of_Questions} questions
+                  </span>
+                  <span className="text-custom-brownnav text-xs md:text-base">
+                    {quiz.Grade_Level}
+                  </span>
+                  <span className="text-custom-brownnav text-xs md:text-base">
+                    {quiz.Creation_Date ? timeAgoDetailed(quiz.Creation_Date.toDate()) : "Invalid Date"}
+                  </span>
+                </div>
+
+                {/* View Button for Laptop/Desktop */}
+                <div className="hidden md:flex md:justify-center md:items-center md:ml-auto">
+                  <button className="bg-gradient-to-r from-midp to-pink text-custom-textcolor  px-4 py-2 text-sm md:text-base font-bold rounded-md shadow-md hover:bg-yellow-600">
+                    View
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* View Button for Mobile */}
-          <div className="flex md:hidden mt-4">
-            <button className="bg-gradient-to-r  from-midp to-pink text-custom-textcolor   w-full px-4 py-2 text-sm font-bold rounded-md shadow-md hover:bg-yellow-600">
-              View
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Draft */}
-      {selected === "Draft" && (
-        <div className="bg-white p-6 md:p-6  rounded-md shadow-custom-darkblue mx-4 md:mx-6 mt-4 flex flex-col gap-4">
-          {/* Image and Text Content */}
-          <div className="flex flex-row items-center gap-4">
-            {/* Image Placeholder */}
-            <div className="w-24 h-24 md:w-28 md:h-28 bg-gray-200 rounded-md flex items-center justify-center">
-              <span className="text-gray-500">Image Here</span>
-            </div>
-
-            {/* Text Content */}
-            <div className="flex-1 flex flex-col md:flex-row md:items-center md:justify-between md:w-full">
-              <div className="flex-1 flex flex-col items-start">
-                <h2 className="text-custom-brownnav text-base md:text-2xl font-bold">
-                  Kabihasnang Asya
-                </h2>
-                <span className="text-custom-brownnav text-sm md:text-xl">
-                  2 questions
-                </span>
-                <span className="text-custom-brownnav text-xs md:text-base">
-                  4th Grade
-                </span>
-                <span className="text-custom-brownnav text-xs md:text-base">
-                  4 hours ago
-                </span>
-              </div>
-
-              {/* View Button for Laptop/Desktop */}
-              <div className="hidden md:flex md:justify-center md:items-center md:ml-auto">
-                <button className="bg-gradient-to-r from-midp to-pink text-custom-textcolor  px-4 py-2 text-sm md:text-base font-bold rounded-md shadow-md hover:bg-yellow-600">
-                  View
-                </button>
-              </div>
+            {/* View Button for Mobile */}
+            <div className="flex md:hidden mt-4">
+              <button className="bg-gradient-to-r  from-midp to-pink text-custom-textcolor   w-full px-4 py-2 text-sm font-bold rounded-md shadow-md hover:bg-yellow-600">
+                View
+              </button>
             </div>
           </div>
-
-          {/* View Button for Mobile */}
-          <div className="flex md:hidden mt-4">
-            <button className="bg-gradient-to-r  from-midp to-pink text-custom-textcolor   w-full px-4 py-2 text-sm font-bold rounded-md shadow-md hover:bg-yellow-600">
-              View
-            </button>
-          </div>
-        </div>
-      )}
+        );
+      })}
 
       <CreateQuizModal
         createquizmodal={createquizmodal}
@@ -187,5 +186,23 @@ function LibraryPage() {
     </div>
   );
 }
+
+const timeAgoDetailed = (date) => {
+  const now = new Date();
+  const seconds = Math.floor((now - date) / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+
+  if (hours >= 1) {
+    const remainingMinutes = minutes % 60;
+    return `${hours} hour${hours > 1 ? 's' : ''} and ${remainingMinutes} minute${remainingMinutes !== 1 ? 's' : ''} ago`;
+  }
+
+  if (minutes >= 1) {
+    return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+  }
+
+  return `${seconds} second${seconds !== 1 ? 's' : ''} ago`;
+};
 
 export default LibraryPage;

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from "react-router-dom";
 import { getFirestore, doc, setDoc, collection } from "firebase/firestore";
+import { serverTimestamp } from "firebase/firestore"; // Import Firestore functions
 
 function EditQuizPage() {
   const navigate = useNavigate();
@@ -38,7 +39,7 @@ function EditQuizPage() {
     await setDoc(quizDocRef, {
       Quiz_Name: quizName,
       Grade_Level: gradeLevel,
-      Creation_Time: creationTime || new Date(),
+      Creation_Date: serverTimestamp(),
       Status: status,
       Number_Of_Questions: selectedQuestions.length
     });
