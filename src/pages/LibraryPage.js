@@ -43,6 +43,14 @@ function LibraryPage() {
     fetchQuizzes();
   }, [selected, sortOrder, selectedGradeLevel]);
 
+  const handleViewClick = (quiz) => {
+    if (selected === "Published") {
+      navigate('/Library/Publish/View', { state: { quiz } });
+    } else if (selected === "Draft") {
+      navigate('/Library/Draft/View', { state: { quiz } });
+    }
+  };
+
   return (
     <div className="flex-1 h-screen bg-custom-textcolor pb-4 md:pb-10">
       <header className="flex items-center shadow-custom-darkblue h-16 md:h-20">
@@ -132,7 +140,6 @@ function LibraryPage() {
 
       {/* Quizzes Display */}
       {quizzes.map((quiz) => {
-        console.log(quiz.Creation_Date); // Log the Creation_Date for each quiz
         return (
           <div key={quiz.id} className="bg-white p-6 md:p-6 rounded-md shadow-custom-darkblue mx-4 md:mx-6 mt-4 flex flex-col gap-4">
             {/* Image and Text Content */}
@@ -161,7 +168,10 @@ function LibraryPage() {
 
                 {/* View Button for Laptop/Desktop */}
                 <div className="hidden md:flex md:justify-center md:items-center md:ml-auto">
-                  <button className="bg-gradient-to-r from-midp to-pink text-custom-textcolor  px-4 py-2 text-sm md:text-base font-bold rounded-md shadow-md hover:bg-yellow-600">
+                  <button 
+                    className="bg-gradient-to-r from-midp to-pink text-custom-textcolor  px-4 py-2 text-sm md:text-base font-bold rounded-md shadow-md hover:bg-yellow-600"
+                    onClick={() => handleViewClick(quiz)}
+                  >
                     View
                   </button>
                 </div>
@@ -170,7 +180,10 @@ function LibraryPage() {
 
             {/* View Button for Mobile */}
             <div className="flex md:hidden mt-4">
-              <button className="bg-gradient-to-r  from-midp to-pink text-custom-textcolor   w-full px-4 py-2 text-sm font-bold rounded-md shadow-md hover:bg-yellow-600">
+              <button 
+                className="bg-gradient-to-r  from-midp to-pink text-custom-textcolor   w-full px-4 py-2 text-sm font-bold rounded-md shadow-md hover:bg-yellow-600"
+                onClick={() => handleViewClick(quiz)}
+              >
                 View
               </button>
             </div>
