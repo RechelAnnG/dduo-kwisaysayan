@@ -5,6 +5,7 @@ import { collection, addDoc, serverTimestamp } from "firebase/firestore"; // Imp
 import arrowIcon from "../../assets/images/arrow-icon.png";
 import deleteIcon from "../../assets/images/deleteRed-icon.png";
 import addGreenIcon from "../../assets/images/addGreen-icon.png";
+import addWhiteIcon from "../../assets/images/addWhite-icon.png";
 
 function CreateQuestionBankPage() {
   const [questionContainers, setQuestionContainers] = useState([{ 
@@ -13,10 +14,10 @@ function CreateQuestionBankPage() {
     questionText: "", 
     difficultyLevel: "", 
     correctAnswersCount: 0, 
-    choices: Array(5).fill().map(() => ({ text: "", isCorrect: false })), 
+    choices: Array(3).fill().map(() => ({ text: "", isCorrect: false })), 
     trueFalseAnswer: null, 
     yesNoAnswer: null,
-    identificationAnswer: "" // Updated line
+    identificationAnswer: ""
   }]);
   const [questionBankName, setQuestionBankName] = useState("");
   const [gradeLevel, setGradeLevel] = useState("");
@@ -46,7 +47,7 @@ function CreateQuestionBankPage() {
       questionText: "", 
       difficultyLevel: "", 
       correctAnswersCount: 0, 
-      choices: Array(5).fill().map(() => ({ text: "", isCorrect: false })), 
+      choices: Array(3).fill().map(() => ({ text: "", isCorrect: false })), 
       trueFalseAnswer: null, 
       yesNoAnswer: null,
       identificationAnswer: ""
@@ -62,6 +63,12 @@ function CreateQuestionBankPage() {
   const handleChoiceTextChange = (event, containerIndex, choiceIndex) => {
     const updatedContainers = [...questionContainers];
     updatedContainers[containerIndex].choices[choiceIndex].text = event.target.value;
+    setQuestionContainers(updatedContainers);
+  };
+
+  const handleAddChoiceClick = (containerIndex) => {
+    const updatedContainers = [...questionContainers];
+    updatedContainers[containerIndex].choices.push({ text: "", isCorrect: false });
     setQuestionContainers(updatedContainers);
   };
 
@@ -123,10 +130,14 @@ function CreateQuestionBankPage() {
             });
           }
         } else if (container.selectedOption === "True or False" || container.selectedOption === "Yes or No") {
-          await addDoc(collection(db, "tbl_answers"), {
-            Question_ID: questionDocRef.id,
-            Answer_text: container.trueFalseAnswer || container.yesNoAnswer,
-          });
+          const choices = container.selectedOption === "True or False" ? ["True", "False"] : ["Yes", "No"];
+          for (let i = 0; i < choices.length; i++) {
+            await addDoc(collection(db, "tbl_choices"), {
+              Question_ID: questionDocRef.id,
+              Choice_Text: choices[i],
+              Is_Correct: choices[i] === (container.trueFalseAnswer || container.yesNoAnswer),
+            });
+          }
         } else if (container.selectedOption === "Identification") {
           await addDoc(collection(db, "tbl_answers"), {
             Question_ID: questionDocRef.id,
@@ -171,6 +182,9 @@ function CreateQuestionBankPage() {
               <option value="" disabled>
                 Grade level
               </option>
+              <option value="Grade 4">Grade 4</option>
+              <option value="Grade 5">Grade 5</option>
+              <option value="Grade 6">Grade 6</option>
               <option value="Grade 7">Grade 7</option>
               <option value="Grade 8">Grade 8</option>
               <option value="Grade 9">Grade 9</option>
@@ -272,9 +286,6 @@ function CreateQuestionBankPage() {
                 <p className="text-xs text-left md:text-base">
                   (select checkbox for correct answer)
                 </p>
-                <p className="text-xs text-left md:text-base">
-                  {container.correctAnswersCount > 0 && `  ${container.correctAnswersCount} correct answer${container.correctAnswersCount > 1 ? 's' : ''}`}
-                </p>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                 {container.choices.map((choice, choiceIndex) => (
@@ -298,6 +309,13 @@ function CreateQuestionBankPage() {
                   </div>
                 ))}
               </div>
+              <button
+                className="flex gap-2 items-center text-custom-brownbg border border-white p-1 rounded-md self-end mt-2"
+                onClick={() => handleAddChoiceClick(index)}
+              >
+                <img src={addWhiteIcon} alt="Add Icon" className="w-4 h-4" />
+                Add Choice
+              </button>
             </div>
           )}
 

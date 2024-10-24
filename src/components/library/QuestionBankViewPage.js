@@ -48,18 +48,15 @@ function QuestionBankViewPage() {
                 question.Question_Type === "True or False" ||
                 question.Question_Type === "Yes or No"
               ) {
-                // Set answer options for True or False / Yes or No questions
-                question.answerOptions =
-                  question.Question_Type === "True or False"
-                    ? ["True", "False"]
-                    : ["Yes", "No"];
-                // Fetch the correct answer for True or False / Yes or No questions
-                const answersQuery = query(
-                  collection(db, "tbl_answers"),
+                // Fetch the choices for True or False / Yes or No questions from tbl_choices
+                const choicesQuery = query(
+                  collection(db, "tbl_choices"),
                   where("Question_ID", "==", doc.id)
                 );
-                const answersSnapshot = await getDocs(answersQuery);
-                question.correctAnswer = answersSnapshot.docs[0]?.data()?.Answer_text;
+                const choicesSnapshot = await getDocs(choicesQuery);
+                question.answerOptions = choicesSnapshot.docs
+                  .map((choiceDoc) => choiceDoc.data())
+                  .sort((a, b) => (a.Choice_Text === "True" || a.Choice_Text === "Yes" ? -1 : 1)); // Ensure consistent order of options with True/Yes first
               } else if (question.Question_Type === "Identification") {
                 // Fetch the correct answer for Identification questions
                 const answersQuery = query(
@@ -184,13 +181,13 @@ function QuestionBankViewPage() {
                 <div className="flex text-sm text-left md:text-xl font-semibold text-darkp md:mb-0">Answer Options</div>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {question.answerOptions?.map((option, index) => (
-                    <div key={index} className={`p-2 border rounded-md ${question.correctAnswer === option ? 'border-pink' : 'border-gray-300'}`}>
-                      {option}
+                    <div key={index} className={`p-2 border rounded-md ${option.Is_Correct ? 'border-pink' : 'border-gray-300'}`}>
+                      {option.Choice_Text}
                     </div>
                   ))}
                 </div>
               </>
-            )}
+            )}{/* go back here in case*/}
 
             {question.Question_Type === "Identification" && (
               <>
@@ -200,7 +197,7 @@ function QuestionBankViewPage() {
                 </div>
               </>
             )}
-          </div>
+          </div> 
         ))}
     </div>
   );
