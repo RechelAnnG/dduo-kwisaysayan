@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
-import arrowIcon from "../../assets/images/arrow-icon.png";
-import { useNavigate, useLocation } from "react-router-dom";
+import arrowIcon from "../../../assets/images/arrow-icon.png";
+import { useLocation, useNavigate } from "react-router-dom";
 import { getFirestore, doc, getDoc, updateDoc } from "firebase/firestore";
 
-function DraftViewPage() {
+function PublishViewPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { quiz } = location.state || {};
@@ -15,7 +15,6 @@ function DraftViewPage() {
     if (quiz) {
       const fetchQuestions = async () => {
         try {
-          // Fetch questions directly from the quiz document
           const quizDocRef = doc(db, "tbl_quizzes", quiz.id);
           const quizDoc = await getDoc(quizDocRef);
 
@@ -49,6 +48,32 @@ function DraftViewPage() {
     setIsEditing((prev) => !prev);
   };
 
+  const generateQuizCode = () => {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let code = '';
+    for (let i = 0; i < 6; i++) {
+      code += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+    return code;
+  };
+  
+  const handleStartNow = async () => {
+    if (quiz) {
+      const quizCode = generateQuizCode();
+      try {
+        const quizDocRef = doc(db, "tbl_quizzes", quiz.id);
+        await updateDoc(quizDocRef, {
+          Status: "Active",
+          Quiz_Code: quizCode,
+        });
+        alert(`Quiz is now active! Quiz code: ${quizCode}`);
+        navigate("/Teacher/Reports"); // Redirect to Reports Page
+      } catch (error) {
+        console.error("Error starting the quiz:", error);
+      }
+    }
+  };
+
   const handleSaveClick = async () => {
     if (quiz && questions.length > 0) {
       try {
@@ -64,21 +89,6 @@ function DraftViewPage() {
     }
   };
 
-  const handlePublishViewClick = async () => {
-    if (quiz) {
-      try {
-        const quizDocRef = doc(db, "tbl_quizzes", quiz.id);
-        await updateDoc(quizDocRef, {
-          Status: "Published",
-        });
-        alert("Quiz status updated to Published!");
-        navigate("/Library/Publish/View", { state: { quiz } });
-      } catch (error) {
-        console.error("Error updating quiz status:", error);
-      }
-    }
-  };
-
   if (!quiz) {
     return <div className="flex justify-center items-center h-screen">Quiz data not available</div>;
   }
@@ -87,7 +97,7 @@ function DraftViewPage() {
     <div className="flex-1 min-h-screen bg-custom-brownbg md:pb-10">
       <header className="flex items-center shadow-custom-darkblue h-16 md:h-20">
         <div className="flex p-2 md:p-4 text-lg md:text-2xl items-center font-bold text-custom-brownnav">
-          <h1>DRAFT</h1>
+          <h1>PUBLISHED</h1>
           <img
             src={arrowIcon}
             alt="Arrow Page"
@@ -97,18 +107,14 @@ function DraftViewPage() {
         </div>
       </header>
 
-      {/* White Container */}
       <div className="bg-white p-6 mt-5 md:p-6 rounded-md shadow-custom-darkblue mx-2 md:mx-6 flex flex-col gap-4">
-        {/* Image and Text Content */}
         <div className="flex flex-row items-center gap-4">
           <div className="md:flex-col md:flex md:items-center md:justify-center">
-            {/* Image Placeholder */}
             <div className="w-24 h-24 md:w-28 md:h-28 bg-gray-200 rounded-md flex items-center justify-center">
               <span className="text-gray-500">Image Here</span>
             </div>
           </div>
 
-          {/* Text Content */}
           <div className="flex-1 flex flex-col md:flex-row md:items-start md:justify-between md:w-full">
             <div className="flex-1 flex flex-col items-start">
               <h2 className="text-custom-brownnav text-base md:text-2xl font-bold">
@@ -125,7 +131,6 @@ function DraftViewPage() {
               </span>
             </div>
 
-            {/* Buttons for Laptop/Desktop */}
             <div className="hidden md:flex md:flex-row md:gap-4 md:items-end">
               {isEditing ? (
                 <button
@@ -142,31 +147,16 @@ function DraftViewPage() {
                   Edit
                 </button>
               )}
-              <button
-                className="bg-gradient-to-r from-midp to-pink text-custom-textcolor px-4 py-2 text-sm md:text-base font-bold rounded-md shadow-md hover:bg-yellow-600"
-                onClick={handlePublishViewClick}
-              >
-                Publish
+              <button className="bg-gradient-to-r from-midp to-pink text-custom-textcolor px-4 py-2 text-sm md:text-base font-bold rounded-md shadow-md hover:bg-yellow-600">
+                Preview
+              </button>
+              <button className="bg-gradient-to-r from-midp to-pink text-custom-textcolor px-4 py-2 text-sm md:text-base font-bold rounded-md shadow-md hover:bg-yellow-600"
+              onClick={handleStartNow} >
+                Start now
               </button>
             </div>
           </div>
         </div>
-      </div>
-
-      {/* View Button for Mobile */}
-      <div className="flex gap-2 md:hidden">
-        <button
-          className="bg-gradient-to-r flex-1 from-midp to-pink text-custom-textcolor p-3 text-xs font-bold rounded-md shadow-md hover:bg-yellow-600"
-          onClick={handleEditClick}
-        >
-          {isEditing ? "Save Changes" : "Edit"}
-        </button>
-        <button
-          className="bg-gradient-to-r flex-1 from-midp to-pink text-custom-textcolor p-3 text-xs font-bold rounded-md shadow-md hover:bg-yellow-600"
-          onClick={handlePublishViewClick}
-        >
-          Publish
-        </button>
       </div>
 
       <div className="flex items-baseline gap-4 pl-2 pt-4 md:pl-6">
@@ -175,10 +165,9 @@ function DraftViewPage() {
         </h2>
       </div>
 
-      {/* Questions Display */}
       {questions.length > 0 ? (
         questions.map((question, index) => (
-          <div key={index} className="bg-white p-2 mx-2 mt-4 md:p-4 md:mx-6 md:mt-4 rounded-md shadow-custom-darkblue flex flex-col gap-4">
+          <div key={index} className="bg-white p-2 mx-2 mt-4 md:p-4 md:mx-6 rounded-md shadow-custom-darkblue flex flex-col gap-4">
             <div className="flex items-center">
             {question.Difficulty_Level}
             <div className="flex flex-row md:ml-auto gap-2">
@@ -219,7 +208,7 @@ function DraftViewPage() {
                 {question.Question_Text}
               </span>
 
-            
+              
             </div>
 
             <div className="flex flex-col">
@@ -230,8 +219,8 @@ function DraftViewPage() {
 
             <div className="grid grid-cols-2 md:grid-cols-3 md:gap-2 gap-x-6 gap-y-3">
               {question.Choices && question.Choices.map((choice, choiceIndex) => (
-                <span
-                  key={choiceIndex}
+                <span 
+                  key={choiceIndex} 
                   className={`text-gray-900 text-left font-semibold text-sm md:text-lg ${choice.Is_Correct ? 'border-2 rounded-md px-2 border-pink' : ''}`}
                 >
                   {choice.Choice_Text}
@@ -247,4 +236,4 @@ function DraftViewPage() {
   );
 }
 
-export default DraftViewPage;
+export default PublishViewPage;

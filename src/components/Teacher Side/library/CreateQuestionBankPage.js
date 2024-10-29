@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { db } from "../../firebaseConfig"; // Import firebaseConfig
+import { db } from "../../../firebaseConfig"; // Import firebaseConfig
 import { collection, addDoc, serverTimestamp } from "firebase/firestore"; // Import Firestore functions
-import arrowIcon from "../../assets/images/arrow-icon.png";
-import deleteIcon from "../../assets/images/deleteRed-icon.png";
-import addGreenIcon from "../../assets/images/addGreen-icon.png";
-import addWhiteIcon from "../../assets/images/addWhite-icon.png";
+import arrowIcon from "../../../assets/images/arrow-icon.png";
+import deleteIcon from "../../../assets/images/deleteRed-icon.png";
+import addGreenIcon from "../../../assets/images/addGreen-icon.png";
+import addWhiteIcon from "../../../assets/images/addWhite-icon.png";
 
 function CreateQuestionBankPage() {
   const [questionContainers, setQuestionContainers] = useState([{ 
@@ -146,7 +146,7 @@ function CreateQuestionBankPage() {
         }
       }
 
-      navigate('/Library/QuestionBank');
+      navigate('/Teacher/Library/QuestionBank');
     } catch (error) {
       console.error("Error adding document: ", error);
     }

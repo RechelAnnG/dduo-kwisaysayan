@@ -16,48 +16,19 @@ import logoDarkIcon from '../assets/images/logo-icon.png'; // Import the logo ic
 import qbankDarkIcon from "../assets/images/qbankDark-icon.png";
 import qbankLightIcon from "../assets/images/qbankLight-icon.png";
 
-function Nav({ activeLink, setActiveLink }) {
+function NavStudent({ activeLink, setActiveLink }) {
     const [showSubmenu, setShowSubmenu] = useState(false);
     const [isCollapsed, setIsCollapsed] = useState(false); // State to handle collapsing
     const location = useLocation(); // Get the current location
 
     const links = [
         {
-            path: "/teacher/Library",
-            text: "Library",
+            path: "/student/Dashboard",
+            text: "Dashboard",
             activeIcon: libraryYellowIcon,
             inactiveIcon: libraryBeigeIcon,
-            submenu: [
-                {   text: "Question Bank", 
-                    path: "/teacher/Library/QuestionBank",
-                    activeIcon: qbankDarkIcon,
-                    inactiveIcon: qbankLightIcon, }
-            ]
         },
-        {
-            path: "/teacher/Class",
-            text: "Class",
-            activeIcon: classDarkIcon,
-            inactiveIcon: studentsBeigeIcon,
-        },
-        {
-            path: "/teacher/Reports",
-            text: "Reports",
-            activeIcon: reportsYellowIcon,
-            inactiveIcon: reportsBeigeIcon,
-        },
-        {
-            path: "/teacher/Settings",
-            text: "Settings",
-            activeIcon: settingsYellowIcon,
-            inactiveIcon: settingsBeigeIcon,
-        },
-        {
-            path: "/teacher/Profile",
-            text: "Profile",
-            activeIcon: profileYellowIcon,
-            inactiveIcon: profileBeigeIcon,
-        }
+
     ];
 
     const handleLinkClick = (index) => {
@@ -120,30 +91,30 @@ function Nav({ activeLink, setActiveLink }) {
                                 {!isCollapsed && <span>{link.text}</span>}
                             </Link>
 
-                            {/* Render Submenu if showSubmenu is true and this is the Library link */}
-                            {link.submenu && showSubmenu && (
-                                <div className=" mt-8 space-y-8">
-                                    {link.submenu.map((sublink, subIndex) => (
+                            {/* Show submenu if available */}
+                            {link.submenu && (
+                                <div className={`space-y-2 ml-${isCollapsed ? '0' : '8'} ${showSubmenu ? 'block' : 'hidden'}`}>
+                                    {link.submenu.map((submenu, idx) => (
                                         <Link
-                                            key={subIndex}
-                                            to={sublink.path}
-                                            className={`flex items-center rounded-full ${
-                                                location.pathname.startsWith(sublink.path)
-                                                    ? "text-darkp font-semibold bg-custom-brownbg"
-                                                    : "font-semibold text-custom-brownbg"
-                                            } hover:bg-white hover:text-darkp text-lg`}
-                                            onClick={() => handleLinkClick(index)}
+                                            key={idx}
+                                            to={submenu.path}
+                                            className={`flex items-center rounded-full mt-8 ${
+                                                location.pathname.startsWith(submenu.path) // Use startsWith here as well
+                                                    ? "text-darkp font-semibold bg-custom-brownbg" // Selected link styling with background
+                                                    : "text-custom-textcolor"
+                                            } hover:bg-white hover:text-darkp`} // Hover effect similar to main nav
                                         >
                                             <img
                                                 src={
-                                                    location.pathname.startsWith(sublink.path)
-                                                        ? sublink.activeIcon
-                                                        : sublink.inactiveIcon
+                                                    location.pathname.startsWith(submenu.path) // Use startsWith here too
+                                                        ? submenu.activeIcon
+                                                        : submenu.inactiveIcon
                                                 }
-                                                alt={sublink.text}
+                                                alt={submenu.text}
                                                 className="w-5 h-5 m-2"
                                             />
-                                            {!isCollapsed && <span>{sublink.text}</span>}
+                                            {/* Display the submenu label only if not collapsed */}
+                                            {!isCollapsed && <span>{submenu.text}</span>}
                                         </Link>
                                     ))}
                                 </div>
@@ -170,4 +141,4 @@ function Nav({ activeLink, setActiveLink }) {
     );
 }
 
-export default Nav;
+export default NavStudent;

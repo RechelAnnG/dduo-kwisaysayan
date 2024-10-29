@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import arrowIcon from "../../assets/images/arrow-icon.png";
-import deleteIcon from "../../assets/images/deleteRed-icon.png";
-import addGreenIcon from "../../assets/images/addGreen-icon.png";
+import arrowIcon from "../../../assets/images/arrow-icon.png";
+import deleteIcon from "../../../assets/images/deleteRed-icon.png";
+import addGreenIcon from "../../../assets/images/addGreen-icon.png";
 
 function EditQuestionAnswerPage() {
   const navigate = useNavigate(); // Create a navigate function
 
   const handleSaveClick = () => {
     // Handle any additional logic for saving the data here if needed
-    navigate('/Library/QuestionBank/View'); // Redirect to the desired route
+    navigate('/Teacher/Library/QuestionBank/View'); // Redirect to the desired route
   };
 
   return (
@@ -93,4 +93,4 @@ function EditQuestionAnswerPage() {
   );
 }
 
-export default EditQuestionAnswerPage;
+export default EditQuestionAnswerPage; //come back here

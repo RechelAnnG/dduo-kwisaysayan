@@ -56,7 +56,7 @@ function EditQuizPage() {
     });
 
     // Navigate to the Library page
-    navigate("/Library");
+    navigate("/Teacher/Library");
   };
 
   return (

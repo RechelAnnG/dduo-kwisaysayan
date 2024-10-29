@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
-import CreateQuizModal from "../components/library/createQuizModal";
+import CreateQuizModal from "../../components/Teacher Side/library/createQuizModal";
 import { getFirestore, collection, getDocs } from "firebase/firestore";
 
 function LibraryPage() {
@@ -45,9 +45,9 @@ function LibraryPage() {
 
   const handleViewClick = (quiz) => {
     if (selected === "Published") {
-      navigate('/Library/Publish/View', { state: { quiz } });
+      navigate('/Teacher/Library/Publish/View', { state: { quiz } });
     } else if (selected === "Draft") {
-      navigate('/Library/Draft/View', { state: { quiz } });
+      navigate('/Teacher/Library/Draft/View', { state: { quiz } });
     }
   };
 

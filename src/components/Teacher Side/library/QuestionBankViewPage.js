@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom"; // Import useParams to get the bankId from the URL
-import { db } from "../../firebaseConfig";
+import { db } from "../../../firebaseConfig";
 import { collection, getDocs, query, where } from "firebase/firestore";
-import arrowIcon from "../../assets/images/arrow-icon.png";
+import arrowIcon from "../../../assets/images/arrow-icon.png";
 
 function QuestionBankViewPage() {
   const [questions, setQuestions] = useState([]);
@@ -89,9 +89,11 @@ function QuestionBankViewPage() {
     setSelectedDifficulty(event.target.value);
   };
 
-  const handleEditClick = (questionId) => {
-    navigate(`/Library/QuestionBank/Edit/${questionId}`);
+  const handleEditClick = (question) => {
+    navigate("/teacher/Library/QuestionBank/Edit");
   };
+  
+  
 
   return (
     <div className="flex-1 min-h-screen bg-custom-brownbg pb-4 md:pb-10">

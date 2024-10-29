@@ -1,8 +1,8 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom"; // Import useNavigate for navigation
-import arrowIcon from "../../assets/images/arrow-icon.png";
-import { db } from "../../firebaseConfig.js"; // Import Firebase database
+import arrowIcon from "../../../assets/images/arrow-icon.png";
+import { db } from "../../../firebaseConfig.js"; // Import Firebase database
 import { collection, getDocs } from "firebase/firestore"; // Import Firestore functions
 
 function QuestionBankPage() {
@@ -60,11 +60,11 @@ function QuestionBankPage() {
   };
 
   const handleCreateQuestionBankClick = () => {
-    navigate("/Library/QuestionBank/Create"); // Redirect to the specified path
+    navigate("/Teacher/Library/QuestionBank/Create"); // Redirect to the specified path
   };
 
   const handleViewbankClick = (bankId) => {
-    navigate(`/Library/QuestionBank/View/${bankId}`);    // Properly use backticks for string interpolation
+    navigate(`/teacher/Library/QuestionBank/View/${bankId}`);    // Properly use backticks for string interpolation
   };
   
 

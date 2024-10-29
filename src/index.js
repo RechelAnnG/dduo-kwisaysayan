@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
-import LibraryPage from './pages/LibraryPage';
+
 import reportWebVitals from './reportWebVitals';
 import Nav from './components/Nav';
 

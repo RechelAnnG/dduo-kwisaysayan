@@ -19,5 +19,13 @@ def shuffle_questions():
     shuffled = fisher_yates_shuffle(questions)
     return jsonify(shuffled)
 
+@app.route('/shuffle-quiz-questions', methods=['POST'])
+def shuffle_quiz_questions():
+    questions = request.json.get('questions')
+    if not questions:
+        return jsonify({"error": "No questions provided"}), 400
+    shuffled = fisher_yates_shuffle(questions)
+    return jsonify(shuffled)
+
 if __name__ == '__main__':
     app.run(debug=True)

@@ -1,8 +1,8 @@
-import arrowIcon from "../../assets/images/arrow-icon.png";
+import arrowIcon from "../../../assets/images/arrow-icon.png";
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { collection, query, where, getDocs } from "firebase/firestore";
-import { db } from "../../firebaseConfig"; // Assuming you've initialized Firebase
+import { db } from "../../../firebaseConfig"; // Assuming you've initialized Firebase
 
 function CreateQuizPage() {
   const navigate = useNavigate();
@@ -128,7 +128,7 @@ function CreateQuizPage() {
       const shuffledQuestions = await response.json();
       console.log("Shuffled Questions:", shuffledQuestions); // Log shuffled questions
 
-      navigate("/Library/EditQuiz", {
+      navigate("/Teacher/Library/EditQuiz", {
         state: {
           selectedQuestions: shuffledQuestions,
           quizName: quizName,         // Pass quiz name

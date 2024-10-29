@@ -26,18 +26,34 @@ const Login = () => {
 
         try {
             // Query Firestore for the tbl_teacher collection
-            const q = query(
+            let q = query(
                 collection(db, "tbl_teacher"),  // Reference to the collection
                 where("Email", "==", email),    // Match email
                 where("Password", "==", password) // Match password
             );
 
-            const querySnapshot = await getDocs(q);
+            let querySnapshot = await getDocs(q);
 
-            // Check if any matching user was found
+            // Check if any matching teacher user was found
             if (!querySnapshot.empty) {
-                // User is authenticated, redirect to Library
-                navigate('/Library');
+                // If role is Teacher, redirect to Library
+                navigate('/teacher/Library');
+                return;
+            }
+
+            // If no teacher found, query Firestore for the tbl_student collection
+            q = query(
+                collection(db, "tbl_students"),  // Reference to the collection
+                where("Email", "==", email),    // Match email
+                where("Password", "==", password) // Match password
+            );
+
+            querySnapshot = await getDocs(q);
+
+            // Check if any matching student user was found
+            if (!querySnapshot.empty) {
+                // If role is Student, redirect to Student Dashboard
+                navigate('/Student/Dashboard');
             } else {
                 // Invalid credentials
                 setError("Invalid email or password. Please try again.");

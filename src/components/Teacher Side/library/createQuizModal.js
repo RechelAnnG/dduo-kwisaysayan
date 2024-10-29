@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import xButton from '../../assets/images/xButtonLight-icon.png';
+import xButton from '../../../assets/images/xButtonLight-icon.png';
 import { useNavigate } from 'react-router-dom';
 import { collection, getDocs } from 'firebase/firestore';
-import { db } from '../../firebaseConfig.js';
+import { db } from '../../../firebaseConfig.js';
 
 export default function CreateQuizModal({ createquizmodal, createquiztoggleModal }) {
   const [topicName, setTopicName] = useState('');
@@ -51,7 +51,7 @@ export default function CreateQuizModal({ createquizmodal, createquiztoggleModal
     createquiztoggleModal();
 
     // Navigate to CreateQuizPage with the quiz data
-    navigate('/Library/CreateQuiz', {
+    navigate('/Teacher/Library/CreateQuiz', {
       state: {
         quizName: topicName,
         gradeLevel: gradeLevel,

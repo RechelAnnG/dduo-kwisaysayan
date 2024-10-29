@@ -1,4 +1,4 @@
-import viewarrowbutton from "../assets/images/viewArrowDark-icon.png";
+import viewarrowbutton from "../../assets/images/viewArrowDark-icon.png";
 
 function ClassPage() {
     return (
