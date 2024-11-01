@@ -31,7 +31,7 @@ export default function ReportsViewModal({ ReportsViewModal, ReportsViewtoggleMo
               
             </div>
             <div className="bg-white flex-1 border p-4 rounded-md text-center">
-            <p className="text-sm text-gray-600">Points</p>
+              <p className="text-sm text-gray-600">Points</p>
               <p className="text-xl font-bold">0/25</p>
              
             </div>

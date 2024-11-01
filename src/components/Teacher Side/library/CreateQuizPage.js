@@ -10,8 +10,13 @@ function CreateQuizPage() {
   const { quizName, gradeLevel, questionBankId } = location.state || {};
 
   const [questions, setQuestions] = useState([]);
-  const [selectedQuestions, setSelectedQuestions] = useState({});
-
+  const [selectedQuestions, setSelectedQuestions] = useState({
+    Easy: {},
+    Medium: {},
+    Hard: {},
+  });
+  const [difficultyFilter, setDifficultyFilter] = useState("All");
+  
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
@@ -95,6 +100,15 @@ function CreateQuizPage() {
   }, [questionBankId]);
 
   const handleCreateClick = async () => {
+    // Check if the total number of selected questions per difficulty level is at least 5
+    for (const difficulty of ["Easy", "Medium", "Hard"]) {
+      const totalSelected = Object.values(selectedQuestions[difficulty]).reduce((sum, count) => sum + (count || 0), 0);
+      if (totalSelected < 5) {
+        alert(`Please select at least 5 questions for ${difficulty} level.`);
+        return;
+      }
+    }
+
     const allSelectedQuestions = [];
 
     for (const [difficulty, types] of Object.entries(selectedQuestions)) {
@@ -102,8 +116,7 @@ function CreateQuizPage() {
         const questionSubset = questions.filter(
           (q) => q.Difficulty_Level === difficulty && q.Question_Type === questionType
         );
-        const shuffledSubset = fisherYatesShuffle(questionSubset);
-        allSelectedQuestions.push(...shuffledSubset.slice(0, count));
+        allSelectedQuestions.push(...questionSubset.slice(0, count));
       }
     }
 
@@ -141,15 +154,6 @@ function CreateQuizPage() {
     }
   };
 
-  const fisherYatesShuffle = (array) => {
-    const shuffledArray = [...array];
-    for (let i = shuffledArray.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffledArray[i], shuffledArray[j]] = [shuffledArray[j], shuffledArray[i]];
-    }
-    return shuffledArray;
-  };
-
   const handleQuestionCountChange = (difficulty, questionType, count) => {
     setSelectedQuestions((prev) => ({
       ...prev,
@@ -164,13 +168,19 @@ function CreateQuizPage() {
     return questions
       .filter(
         (q) =>
-          q.Difficulty_Level === difficulty && q.Question_Type === questionType
+          (difficultyFilter === "All" || q.Difficulty_Level === difficultyFilter) &&
+          q.Difficulty_Level === difficulty &&
+          q.Question_Type === questionType
       )
       .map((question, index) => (
         <tr key={question.id} className="border-b bg-white border-custom-brownnav">
           <td className="p-4">{`${index + 1}. ${question.Question_Text}`}</td>
         </tr>
       ));
+  };
+
+  const getQuestionCountValue = (difficulty, questionType) => {
+    return selectedQuestions[difficulty]?.[questionType] || "";
   };
 
   return (
@@ -187,7 +197,23 @@ function CreateQuizPage() {
         </div>
       </header>
 
-      {["Easy", "Medium", "Hard"].map((difficulty) => (
+      {/* Dropdowns Container */}
+      <div className="flex  px-6 pt-5 md:flex-row w-full md:w-1/2 gap-2 mt-2 md:mt-0">
+        {/* Dropdown 1 */}
+        <select
+          className="w-full md:w-1/2 p-1 md:p-2 text-xs md:text-base border border-custom-brownnav rounded-md"
+          onChange={(e) => setDifficultyFilter(e.target.value)}
+          value={difficultyFilter}
+        >
+          <option value="All">All</option>
+          <option value="Easy">Easy</option>
+          <option value="Medium">Medium</option>
+          <option value="Hard">Hard</option>
+        </select>
+      </div>
+
+      { difficultyFilter === "All" &&
+        ["Easy", "Medium", "Hard"].map((difficulty) => (
         <div
           key={difficulty}
           className={`${
@@ -216,6 +242,7 @@ function CreateQuizPage() {
                             <input
                               type="number"
                               min="0"
+                              value={getQuestionCountValue(difficulty, questionType)}
                               onChange={(e) => handleQuestionCountChange(difficulty, questionType, parseInt(e.target.value))}
                               className="w-9 md:w-14 p-2 md:p-2 text-xs md:text-base border border-custom-brownnav rounded-md"
                             />
@@ -237,7 +264,59 @@ function CreateQuizPage() {
         </div>
       ))}
 
-      <div className="flex justify-between p-4 md:p-6">
+      {difficultyFilter !== "All" &&
+        [difficultyFilter].map((difficulty) => (
+          <div
+          key={difficulty}
+          className={`${
+            difficulty === "Easy" ? "bg-pink" : difficulty === "Medium" ? "bg-midp" : "bg-darkp"
+          } p-4 md:p-6 rounded-md shadow-custom-darkblue mx-4 md:mx-6 mt-5 flex flex-col gap-4`}
+        >
+          <label className="text-custom-brownbg text-left text-xl md:text-xl font-bold mb-2 md:mb-0 md:mr-4">
+            {difficulty.toUpperCase()}
+          </label>
+
+          {["Multiple Choice", "True or False", "Yes or No", "Identification"].map(
+            (questionType) => (
+              <div key={questionType}>
+                <table className="w-full text-sm text-left bg-custom-brownbg shadow-custom-darkblue border-custom-brownnav text-gray-500 rounded-md overflow-hidden mt-4">
+                  <thead>
+                    <tr className="border-b-2 border-custom-brownnav">
+                      <th className="p-4">
+                        <div className="flex justify-between items-center">
+                          <label className="text-custom-brownnav text-left text-sm md:text-lg font-semibold mb-2 md:mb-0 md:mr-4">
+                            {questionType}
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <label className="text-custom-brownnav text-left text-sm md:text-lg font-semibold mb-2 md:mb-0">
+                              Pick
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              value={getQuestionCountValue(difficulty, questionType)}
+                              onChange={(e) => handleQuestionCountChange(difficulty, questionType, parseInt(e.target.value))}
+                              className="w-9 md:w-14 p-2 md:p-2 text-xs md:text-base border border-custom-brownnav rounded-md"
+                            />
+                            <label className="text-custom-brownnav text-left text-sm md:text-lg font-semibold mb-2 md:mb-0 md:mr-4">
+                              questions
+                            </label>
+                          </div>
+                        </div>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {renderQuestions(difficulty, questionType)}
+                  </tbody>
+                </table>
+              </div>
+            )
+          )}
+        </div>
+      ))}
+
+<div className="flex justify-between p-4 md:p-6">
         <button
           className="bg-gradient-to-r from-midp to-pink text-custom-brownbg px-4 py-2 text-lg font-bold rounded-md shadow-md"
           onClick={handleCreateClick}
