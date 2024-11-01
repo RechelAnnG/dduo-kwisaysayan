@@ -10,43 +10,25 @@ function StudentQuizTakingPage() {
   const [answers, setAnswers] = useState({});
   const [timeLeft, setTimeLeft] = useState(null);
   const [currentIdentificationAnswer, setCurrentIdentificationAnswer] = useState("");
-  const [shuffledQuestions, setShuffledQuestions] = useState([]);
 
   useEffect(() => {
     // Redirect if no quiz data is found in state
     if (!quiz) {
       alert("No quiz data found. Please enter a valid quiz code.");
       navigate("/student/Dashboard");
-    } else {
-      // Shuffle questions using Fisher-Yates algorithm
-      fetch('http://localhost:5000/shuffle-questions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ questions: quiz.Questions }),
-      })
-        .then(response => response.json())
-        .then(data => {
-          setShuffledQuestions(data);
-        })
-        .catch(error => {
-          console.error('Error shuffling questions:', error);
-          setShuffledQuestions(quiz.Questions); // Fallback to original questions if shuffling fails
-        });
     }
   }, [quiz, navigate]);
 
   useEffect(() => {
-    if (shuffledQuestions && shuffledQuestions.length > 0) {
-      const timerString = shuffledQuestions[currentQuestionIndex]?.Timer || "15 seconds";
+    if (quiz && quiz.Questions.length > 0) {
+      const timerString = quiz.Questions[currentQuestionIndex]?.Timer || "15 seconds";
       const timerValue = parseInt(timerString.split(" ")[0]);
       const timeUnit = timerString.split(" ")[1];
 
       const timerInSeconds = timeUnit.startsWith("min") ? timerValue * 60 : timerValue;
       setTimeLeft(timerInSeconds);
     }
-  }, [shuffledQuestions, currentQuestionIndex]);
+  }, [quiz, currentQuestionIndex]);
 
   useEffect(() => {
     if (timeLeft === null) return;
@@ -63,14 +45,12 @@ function StudentQuizTakingPage() {
   const handleAnswerChange = (questionId, answer) => {
     const currentAnswers = answers[questionId] || [];
 
-    // Different handling based on question type
     if (currentQuestion.Question_Type === "Multiple Choice") {
       const updatedAnswers = currentAnswers.includes(answer)
         ? currentAnswers.filter((ans) => ans !== answer)
         : [...currentAnswers, answer];
       setAnswers({ ...answers, [questionId]: updatedAnswers });
     } else {
-      // For True/False and Yes/No questions
       setAnswers({ ...answers, [questionId]: answer });
     }
   };
@@ -80,32 +60,28 @@ function StudentQuizTakingPage() {
   };
 
   const handleNextQuestion = () => {
-    // Save identification answer if it's an identification question
     if (currentQuestion.Question_Type === "Identification") {
       setAnswers({ ...answers, [currentQuestion.id]: currentIdentificationAnswer });
-      setCurrentIdentificationAnswer(""); // Reset identification answer
+      setCurrentIdentificationAnswer("");
     }
 
-    // Clear current answer for next question
     setAnswers(prevAnswers => {
       const updatedAnswers = { ...prevAnswers };
-      delete updatedAnswers[currentQuestion.id]; // Remove answer for current question
+      delete updatedAnswers[currentQuestion.id];
       return updatedAnswers;
     });
 
-    if (currentQuestionIndex < shuffledQuestions.length - 1) {
+    if (currentQuestionIndex < quiz.Questions.length - 1) {
       setCurrentQuestionIndex((prevIndex) => prevIndex + 1);
-    }else {
-      // Navigate to result page after the last question
+    } else {
       navigate("/student/Result/Page", { state: { answers, quiz } });
     }
   };
 
   const handleSubmitQuiz = () => {
-    if (currentQuestionIndex < shuffledQuestions.length - 1) {
+    if (currentQuestionIndex < quiz.Questions.length - 1) {
       handleNextQuestion();
     } else {
-      // Navigate to result page
       navigate("/student/Result/Page", { state: { answers, quiz } });
     }
   };
@@ -114,8 +90,7 @@ function StudentQuizTakingPage() {
     return <div>Loading...</div>;
   }
 
-  // Ensure Questions exist in the quiz data
-  const questions = shuffledQuestions || [];
+  const questions = quiz.Questions || [];
   const currentQuestion = questions[currentQuestionIndex];
 
   const formatTime = (time) => {
@@ -179,7 +154,7 @@ function StudentQuizTakingPage() {
                 <div key={index} className="flex items-center gap-2">
                   <input
                     type="radio"
-                    name={currentQuestion.id} // Ensure the same name for radio buttons
+                    name={currentQuestion.id}
                     className="form-radio h-5 w-5 text-blue-600"
                     checked={answers[currentQuestion.id] === choice.Choice_Text}
                     onChange={() => handleAnswerChange(currentQuestion.id, choice.Choice_Text)}
@@ -227,4 +202,4 @@ function StudentQuizTakingPage() {
   );
 }
 
-export default StudentQuizTakingPage; //back here in case
+export default StudentQuizTakingPage;
