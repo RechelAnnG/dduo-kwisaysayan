@@ -78,7 +78,7 @@ function Nav({ activeLink, setActiveLink }) {
                 isCollapsed
                     ? "relative w-auto"
                     : "fixed sm:relative md:static sm:w-64 md:w-64"
-            } sm:fixed md:static md:left-0 md:top-0 h-full sm:z-50 md:z-0 p-5 bg-gradient-to-b from-darkp to-midp  flex flex-col border-r transition-all duration-300`}
+            } sm:fixed md:static md:left-0 md:top-0 h-full sm:z-50 md:z-0 p-5 shadow-custom-darkblue bg-gradient-to-b from-darkp to-midp  flex flex-col border-r transition-all duration-300`}
         >
             <div className="flex-grow">
                 <div className="flex items-center space-x-2">

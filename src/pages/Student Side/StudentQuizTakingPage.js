@@ -86,6 +86,13 @@ function StudentQuizTakingPage() {
       setCurrentIdentificationAnswer(""); // Reset identification answer
     }
 
+    // Clear current answer for next question
+    setAnswers(prevAnswers => {
+      const updatedAnswers = { ...prevAnswers };
+      delete updatedAnswers[currentQuestion.id]; // Remove answer for current question
+      return updatedAnswers;
+    });
+
     if (currentQuestionIndex < shuffledQuestions.length - 1) {
       setCurrentQuestionIndex((prevIndex) => prevIndex + 1);
     }else {
@@ -220,4 +227,4 @@ function StudentQuizTakingPage() {
   );
 }
 
-export default StudentQuizTakingPage;
+export default StudentQuizTakingPage; //back here in case
