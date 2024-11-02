@@ -108,20 +108,27 @@ function CreateQuizPage() {
         return;
       }
     }
-
-    const allSelectedQuestions = [];
-
+  
+    // Prepare the questions by type and difficulty level
+    const questionsByType = {};
+  
     for (const [difficulty, types] of Object.entries(selectedQuestions)) {
       for (const [questionType, count] of Object.entries(types)) {
-        const questionSubset = questions.filter(
+        const questionsForType = questions.filter(
           (q) => q.Difficulty_Level === difficulty && q.Question_Type === questionType
         );
-        allSelectedQuestions.push(...questionSubset.slice(0, count));
+  
+        if (questionsForType.length > 0) {
+          questionsByType[`${difficulty}_${questionType}`] = {
+            questions: questionsForType,
+            count: count,
+          };
+        }
       }
     }
-
-    console.log("Selected Questions:", allSelectedQuestions); // Log selected questions
-
+  
+    console.log("Questions by Type:", questionsByType); // Log categorized questions by type
+  
     // Call the Python backend to shuffle questions
     try {
       const response = await fetch('http://localhost:5000/shuffle-questions', {
@@ -129,18 +136,18 @@ function CreateQuizPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ questions: allSelectedQuestions }),
+        body: JSON.stringify({ questions_by_type: questionsByType }),
       });
-
+  
       if (!response.ok) {
         const errorData = await response.json();
         console.error("Error:", errorData);
         return; // Exit if there's an error
       }
-
+  
       const shuffledQuestions = await response.json();
       console.log("Shuffled Questions:", shuffledQuestions); // Log shuffled questions
-
+  
       navigate("/Teacher/Library/EditQuiz", {
         state: {
           selectedQuestions: shuffledQuestions,
@@ -153,6 +160,7 @@ function CreateQuizPage() {
       console.error("Error shuffling questions:", error);
     }
   };
+  
 
   const handleQuestionCountChange = (difficulty, questionType, count) => {
     setSelectedQuestions((prev) => ({
