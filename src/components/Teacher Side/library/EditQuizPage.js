@@ -10,36 +10,49 @@ function EditQuizPage() {
 
   const db = getFirestore();
 
-  const [pointsPerQuestion, setPointsPerQuestion] = useState(selectedQuestions.map(() => 1));
-  const [timersPerQuestion, setTimersPerQuestion] = useState(selectedQuestions.map(() => "30 seconds"));
-  const [totalPoints, setTotalPoints] = useState(pointsPerQuestion.reduce((acc, curr) => acc + curr, 0));
+  // Initialize points and timers based on question ID
+  const [pointsPerQuestion, setPointsPerQuestion] = useState(
+    selectedQuestions.reduce((acc, question) => ({ ...acc, [question.id]: 1 }), {})
+  );
+  const [timersPerQuestion, setTimersPerQuestion] = useState(
+    selectedQuestions.reduce((acc, question) => ({ ...acc, [question.id]: "30 seconds" }), {})
+  );
+  const [totalPoints, setTotalPoints] = useState(0);
+  const [selectedDifficulty, setSelectedDifficulty] = useState("All");
+  const [easyAccuracy, setEasyAccuracy] = useState(""); // New state for Easy accuracy
+  const [mediumAccuracy, setMediumAccuracy] = useState(""); // New state for Medium accuracy
+  const [hardAccuracy, setHardAccuracy] = useState(""); // New state for Hard accuracy
+
 
   useEffect(() => {
-    setTotalPoints(pointsPerQuestion.reduce((acc, curr) => acc + curr, 0));
+    const total = Object.values(pointsPerQuestion).reduce((acc, curr) => acc + curr, 0);
+    setTotalPoints(total);
   }, [pointsPerQuestion]);
 
-  const handlePointSelection = (points, index) => {
-    const newPoints = [...pointsPerQuestion];
-    newPoints[index] = parseInt(points);
-    setPointsPerQuestion(newPoints);
+  const handlePointSelection = (points, questionId) => {
+    setPointsPerQuestion(prev => ({
+      ...prev,
+      [questionId]: parseInt(points),
+    }));
   };
 
-  const handleTimerSelection = (timer, index) => {
-    const newTimers = [...timersPerQuestion];
-    newTimers[index] = timer;
-    setTimersPerQuestion(newTimers);
+  const handleTimerSelection = (timer, questionId) => {
+    setTimersPerQuestion(prev => ({
+      ...prev,
+      [questionId]: timer,
+    }));
   };
 
   const handleSaveQuiz = async (status) => {
     const quizDocRef = doc(collection(db, "tbl_quizzes"));
 
-    const questionsData = selectedQuestions.map((question, index) => ({
+    const questionsData = selectedQuestions.map((question) => ({
       Question_Text: question.Question_Text,
       Question_Type: question.Question_Type,
       Difficulty_Level: question.Difficulty_Level,
       Choices: question.Choices,
-      Points: pointsPerQuestion[index],
-      Timer: timersPerQuestion[index],
+      Points: pointsPerQuestion[question.id],
+      Timer: timersPerQuestion[question.id],
     }));
 
     await setDoc(quizDocRef, {
@@ -49,63 +62,64 @@ function EditQuizPage() {
       Status: status,
       Number_Of_Questions: selectedQuestions.length,
       Questions: questionsData,
+      Accuracy: { easy: easyAccuracy, medium: mediumAccuracy, hard: hardAccuracy }, // Save the accuracies separately
+
     });
 
     navigate("/Teacher/Library");
   };
 
   const renderQuestionsByDifficulty = (questions, difficulty) => {
-    return (
-      questions
-        .filter(question => question.Difficulty_Level === difficulty)
-        .map((question, index) => (
-          <div key={question.id} className="bg-white p-2 md:p-4 rounded-md shadow-custom-darkblue flex flex-col gap-4">
-            <div className="flex gap-4 md:items-center flex-col md:flex-row">
-              <span className="text-gray-900 text-left border border-1 md:p-2 border-black p-1 rounded-md font-semibold text-base md:text-base">
-                {index + 1}. {question.Question_Type} - {question.Difficulty_Level}
-              </span>
+    return questions
+      .filter(question => question.Difficulty_Level === difficulty)
+      .map((question, index) => (
+        <div key={question.id} className="bg-white p-2 md:p-4 rounded-md shadow-custom-darkblue flex flex-col gap-4">
+          
+          <div className="flex gap-4 md:items-center flex-col md:flex-row">
+            <span className="text-gray-900 text-left border border-1 md:p-2 border-black p-1 rounded-md font-semibold text-base md:text-base">
+              {index + 1}. {question.Question_Type} - {question.Difficulty_Level}
+            </span>
 
-              <div className="flex flex-row w-full md:w-1/2 gap-2">
-                <select className="w-1/2 p-1 md:p-2 text-xs md:text-base border border-gray-900 rounded-md"
-                        value={pointsPerQuestion[index]}
-                        onChange={e => handlePointSelection(e.target.value, index)}>
-                  <option value="1">1 point</option>
-                  <option value="2">2 points</option>
-                  <option value="3">3 points</option>
-                </select>
+            <div className="flex flex-row w-full md:w-1/2 gap-2">
+             <select className="w-1/2 p-1 md:p-2 text-xs md:text-base border border-gray-900 rounded-md"
+                      value={pointsPerQuestion[question.id] || 1}
+                      onChange={e => handlePointSelection(e.target.value, question.id)}>
+                <option value="1">1 point</option>
+                <option value="2">2 points</option>
+                <option value="3">3 points</option>
+              </select>
 
-                <select className="w-1/2 p-1 md:p-2 text-xs md:text-base border border-gray-900 rounded-md"
-                        value={timersPerQuestion[index]}
-                        onChange={e => handleTimerSelection(e.target.value, index)}>
-                  <option value="15 seconds">15 seconds</option>
-                  <option value="30 seconds">30 seconds</option>
-                  <option value="1 minute">1 min</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="flex flex-col">
-              <span className="text-gray-900 text-left font-semibold text-base md:text-lg">
-                {question.Question_Text}
-              </span>
-              <span className="text-gray-500 text-left font-semibold text-base md:text-lg">
-                Choices
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-3 md:gap-2 gap-x-6 gap-y-3">
-              {question.Choices && question.Choices.map((choice, choiceIndex) => (
-                <span 
-                  key={choiceIndex} 
-                  className={`text-gray-900 text-left font-semibold text-sm md:text-lg ${choice.Is_Correct ? 'border-2 rounded-md px-2 border-pink' : ''}`}
-                >
-                  {choice.Choice_Text}
-                </span>
-              ))}
+              <select className="w-1/2 p-1 md:p-2 text-xs md:text-base border border-gray-900 rounded-md"
+                      value={timersPerQuestion[question.id] || "30 seconds"}
+                      onChange={e => handleTimerSelection(e.target.value, question.id)}>
+                <option value="15 seconds">15 seconds</option>
+                <option value="30 seconds">30 seconds</option>
+                <option value="1 minute">1 min</option>
+              </select>
             </div>
           </div>
-        ))
-    );
+
+          <div className="flex flex-col">
+            <span className="text-gray-900 text-left font-semibold text-base md:text-lg">
+              {question.Question_Text}
+            </span>
+            <span className="text-gray-500 text-left font-semibold text-base md:text-lg">
+              Choices
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 md:gap-2 gap-x-6 gap-y-3">
+            {question.Choices && question.Choices.map((choice, choiceIndex) => (
+              <span 
+                key={choiceIndex} 
+                className={`text-gray-900 text-left font-semibold text-sm md:text-lg ${choice.Is_Correct ? 'border-2 rounded-md px-2 border-pink' : ''}`}
+              >
+                {choice.Choice_Text}
+              </span>
+            ))}
+          </div>
+        </div>
+      ));
   };
 
   return (
@@ -159,31 +173,88 @@ function EditQuizPage() {
       </div>
 
       <div className="flex px-6 items-baseline gap-4">
-          <h2 className="text-gray-900 text-left text-xl md:text-2xl font-bold">
-            {selectedQuestions.length} Questions
-          </h2>
-          <span className="text-gray-900 font-semibold text-base md:text-lg">
-            ({totalPoints} points)
-          </span>
+        <h2 className="text-gray-900 text-left text-xl md:text-2xl font-bold">
+          {selectedQuestions.length} Questions
+        </h2>
+        <span className="text-gray-900 font-semibold text-base md:text-lg">
+          ({totalPoints} points)
+        </span>
+
+        <select
+          className="p-1 md:p-2 text-xs md:text-base border border-custom-brownnav rounded-md"
+          value={selectedDifficulty}
+          onChange={(e) => setSelectedDifficulty(e.target.value)}
+        >
+          <option value="All">All</option>
+          <option value="Easy">Easy</option>
+          <option value="Medium">Medium</option>
+          <option value="Hard">Hard</option>
+        </select>
+      </div>
+
+      {/* Display Containers Based on Selected Difficulty */}
+      {selectedDifficulty === "All" || selectedDifficulty === "Easy" ? (
+        <div className="bg-pink p-6 md:p-6 rounded-md shadow-custom-darkblue mx-2 md:mx-6 flex flex-col gap-4">
+          <div className="flex">
+            <h2 className="text-custom-brownbg text-left text-xl md:text-2xl font-bold">Easy Questions</h2>
+            <div className="ml-auto">
+              <div className="flex gap-2">
+              <h2 className="text-custom-brownbg text-left text-xl md:text-2xl font-bold">Accuracy:</h2>
+              <input
+                type="number"
+                value={easyAccuracy}
+                onChange={(e) => setEasyAccuracy(e.target.value)}
+                className="p-1 text-base border border-gray-300 rounded-md w-12"
+                placeholder=""
+              />
+              </div>
+            </div>
+          </div>  
+          {renderQuestionsByDifficulty(selectedQuestions, 'Easy')}
         </div>
+      ) : null}
 
-      {/* Easy Questions */}
-      <div className="bg-pink p-6 md:p-6 rounded-md shadow-custom-darkblue mx-2 md:mx-6 flex flex-col gap-4">
-        <h2 className="text-custom-brownbg text-left text-xl md:text-2xl font-bold">Easy Questions</h2>
-        {renderQuestionsByDifficulty(selectedQuestions, 'Easy')}
-      </div>
+      {selectedDifficulty === "All" || selectedDifficulty === "Medium" ? (
+        <div className="bg-midp p-6 md:p-6 rounded-md shadow-custom-darkblue mx-2 md:mx-6 flex flex-col gap-4">
+          <div className="flex">
+            <h2 className="text-custom-brownbg text-left text-xl md:text-2xl font-bold">Medium Questions</h2>
+            <div className="ml-auto">
+              <div className="flex gap-2">
+              <h2 className="text-custom-brownbg text-left text-xl md:text-2xl font-bold">Accuracy:</h2>
+              <input
+                type="number"
+                value={mediumAccuracy}
+                onChange={(e) => setMediumAccuracy(e.target.value)}
+                className="p-1 text-base border border-gray-300 rounded-md w-12"
+                placeholder=""
+              />
+              </div>
+            </div>
+          </div> 
+          {renderQuestionsByDifficulty(selectedQuestions, 'Medium')}
+        </div>
+      ) : null}
 
-      {/* Medium Questions */}
-      <div className="bg-midp p-6 md:p-6 rounded-md shadow-custom-darkblue mx-2 md:mx-6 flex flex-col gap-4">
-        <h2 className="text-custom-brownbg text-left text-xl md:text-2xl font-bold">Medium Questions</h2>
-        {renderQuestionsByDifficulty(selectedQuestions, 'Medium')}
-      </div>
-
-      {/* Hard Questions */}
-      <div className="bg-darkp p-6 md:p-6 rounded-md shadow-custom-darkblue mx-2 md:mx-6 flex flex-col gap-4">
-        <h2 className="text-custom-brownbg text-left text-xl md:text-2xl font-bold">Hard Questions</h2>
-        {renderQuestionsByDifficulty(selectedQuestions, 'Hard')}
-      </div>
+      {selectedDifficulty === "All" || selectedDifficulty === "Hard" ? (
+        <div className="bg-darkp p-6 md:p-6 rounded-md shadow-custom-darkblue mx-2 md:mx-6 flex flex-col gap-4">
+          <div className="flex">
+            <h2 className="text-custom-brownbg text-left text-xl md:text-2xl font-bold">Hard Questions</h2>
+            <div className="ml-auto">
+              <div className="flex gap-2">
+              <h2 className="text-custom-brownbg text-left text-xl md:text-2xl font-bold">Accuracy:</h2>
+              <input
+                type="number"
+                value={hardAccuracy}
+                onChange={(e) => setHardAccuracy(e.target.value)}
+                className="p-1 text-base border border-gray-300 rounded-md w-12"
+                placeholder=""
+              />
+              </div>
+            </div>
+          </div>  
+          {renderQuestionsByDifficulty(selectedQuestions, 'Hard')}
+        </div>
+      ) : null}
     </div>
   );
 }
