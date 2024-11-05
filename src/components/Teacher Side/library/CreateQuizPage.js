@@ -79,9 +79,10 @@ function CreateQuizPage() {
 
               // Set the choices based on the answers fetched
               choices = answers.map(answer => ({
-                Choice_Text: answer.Answer_text, // Use the answer text
-                Is_Correct: answer.Answer_text === questionData.Correct_Answer, // Assuming you have a Correct_Answer field in the question
+                Choice_Text: answer.Answer_text, // Correct the case
+                Is_Correct: true, // Identification questions have one correct answer
               }));
+              
             }
 
             console.log("Fetched Question with Choices:", { ...questionData, Choices: choices }); // Log each question with its choices

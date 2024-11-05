@@ -10,9 +10,9 @@ function StudentQuizTakingPage() {
   const [answers, setAnswers] = useState({});
   const [timeLeft, setTimeLeft] = useState(null);
   const [currentIdentificationAnswer, setCurrentIdentificationAnswer] = useState("");
+  const [feedback, setFeedback] = useState("");
 
   useEffect(() => {
-    // Redirect if no quiz data is found in state
     if (!quiz) {
       alert("No quiz data found. Please enter a valid quiz code.");
       navigate("/student/Dashboard");
@@ -24,7 +24,6 @@ function StudentQuizTakingPage() {
       const timerString = quiz.Questions[currentQuestionIndex]?.Timer || "15 seconds";
       const timerValue = parseInt(timerString.split(" ")[0]);
       const timeUnit = timerString.split(" ")[1];
-
       const timerInSeconds = timeUnit.startsWith("min") ? timerValue * 60 : timerValue;
       setTimeLeft(timerInSeconds);
     }
@@ -59,18 +58,64 @@ function StudentQuizTakingPage() {
     setCurrentIdentificationAnswer(value);
   };
 
-  const handleNextQuestion = () => {
-    if (currentQuestion.Question_Type === "Identification") {
-      setAnswers({ ...answers, [currentQuestion.id]: currentIdentificationAnswer });
-      setCurrentIdentificationAnswer("");
+  const handleNextQuestion = async () => {
+    const questionId = currentQuestion.id;
+    const questionType = currentQuestion.Question_Type;
+  
+    let updatedAnswers = { ...answers };
+    
+    if (questionType === "Identification") {
+      updatedAnswers[questionId] = currentIdentificationAnswer;
+    } else if (questionType === "Multiple Choice") {
+      updatedAnswers[questionId] = answers[questionId] || [];
+    } else {
+      updatedAnswers[questionId] = answers[questionId];
     }
-
-    setAnswers(prevAnswers => {
-      const updatedAnswers = { ...prevAnswers };
-      delete updatedAnswers[currentQuestion.id];
-      return updatedAnswers;
-    });
-
+  
+    setAnswers(updatedAnswers);
+  
+    let requestBody = {};
+    if (questionType === "Multiple Choice") {
+      requestBody = {
+        answer: updatedAnswers[questionId],
+        correct_answer: currentQuestion.Choices.filter((choice) => choice.Is_Correct).map(choice => choice.Choice_Text),
+        question_type: questionType
+      };
+    } else if (questionType === "Identification") {
+      requestBody = {
+        answer: currentIdentificationAnswer,
+        correct_answer: currentQuestion.Choices.find((choice) => choice.Is_Correct).Choice_Text,
+        question_type: questionType
+      };
+    } else {
+      requestBody = {
+        answer: updatedAnswers[questionId],
+        correct_answer: currentQuestion.Choices.find((choice) => choice.Is_Correct).Choice_Text,
+        question_type: questionType
+      };
+    }
+  
+    try {
+      const response = await fetch("http://localhost:5000/check-answer", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(requestBody)
+      });
+  
+      const data = await response.json();
+      setFeedback(data.message);
+  
+      alert(data.message);
+      console.log("API Response:", data);
+    } catch (error) {
+      console.error("Error checking answer:", error);
+    }
+  
+    setCurrentIdentificationAnswer("");
+    setFeedback("");
+  
     if (currentQuestionIndex < quiz.Questions.length - 1) {
       setCurrentQuestionIndex((prevIndex) => prevIndex + 1);
     } else {
@@ -104,7 +149,7 @@ function StudentQuizTakingPage() {
       <div className="p-4 md:py-6 flex flex-1 flex-col gap-5">
         <div className="flex-1 bg-white p-14 md:p-5 gap-4 w-full shadow-custom-darkblue rounded-md flex flex-col">
           <div className="flex flex-col shad border bg-midp p-2 rounded-md">
-            <div className="text-lg font-bold text-left text-custom-brownbg ">{quiz.Quiz_Name}</div>
+            <div className="text-lg font-bold text-left text-custom-brownbg">{quiz.Quiz_Name}</div>
             <div className="text-lg font-bold text-left text-custom-brownbg mb-2">
               {currentQuestionIndex + 1}/{questions.length}
             </div>
