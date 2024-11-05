@@ -45,6 +45,7 @@ def check_answer():
     student_answers = data.get('answer')
     correct_answers = data.get('correct_answer')  # Assume this can be a list for multiple choice
     question_type = data.get('question_type')
+    question_points = data.get('points')  # Get points from the request data
 
     # Normalize and check answers
     if question_type == 'Multiple Choice':
@@ -54,9 +55,11 @@ def check_answer():
     else:
         is_correct = student_answers.strip().lower() == correct_answers.strip().lower()
 
+  # Prepare response with points
     response = {
         'correct': is_correct,
-        'message': 'Correct' if is_correct else 'Incorrect'
+        'message': 'Correct' if is_correct else 'Incorrect',
+        'points': question_points if is_correct else 0  # Return points only if the answer is correct
     }
     return jsonify(response)
 
