@@ -11,6 +11,8 @@ function StudentQuizTakingPage() {
   const [timeLeft, setTimeLeft] = useState(null);
   const [currentIdentificationAnswer, setCurrentIdentificationAnswer] = useState("");
   const [feedback, setFeedback] = useState("");
+  const [totalPoints, setTotalPoints] = useState(0); // Total points of the quiz
+  const [currentPoints, setCurrentPoints] = useState(0); // Points scored so far
 
   useEffect(() => {
     if (!quiz) {
@@ -40,6 +42,14 @@ function StudentQuizTakingPage() {
 
     return () => clearInterval(timerId);
   }, [timeLeft]);
+
+  useEffect(() => {
+    // Calculate total points when quiz data is loaded
+    if (quiz) {
+      const total = quiz.Questions.reduce((acc, question) => acc + (question.Points || 0), 0);
+      setTotalPoints(total);
+    }
+  }, [quiz]);
 
   const handleAnswerChange = (questionId, answer) => {
     const currentAnswers = answers[questionId] || [];
@@ -79,19 +89,22 @@ function StudentQuizTakingPage() {
       requestBody = {
         answer: updatedAnswers[questionId],
         correct_answer: currentQuestion.Choices.filter((choice) => choice.Is_Correct).map(choice => choice.Choice_Text),
-        question_type: questionType
+        question_type: questionType,
+        points: currentQuestion.Points // Add points to the request
       };
     } else if (questionType === "Identification") {
       requestBody = {
         answer: currentIdentificationAnswer,
         correct_answer: currentQuestion.Choices.find((choice) => choice.Is_Correct).Choice_Text,
-        question_type: questionType
+        question_type: questionType,
+        points: currentQuestion.Points // Add points to the request
       };
     } else {
       requestBody = {
         answer: updatedAnswers[questionId],
         correct_answer: currentQuestion.Choices.find((choice) => choice.Is_Correct).Choice_Text,
-        question_type: questionType
+        question_type: questionType,
+        points: currentQuestion.Points // Add points to the request
       };
     }
   
@@ -106,6 +119,10 @@ function StudentQuizTakingPage() {
   
       const data = await response.json();
       setFeedback(data.message);
+
+      if (data.correct) {
+        setCurrentPoints((prevPoints) => prevPoints + currentQuestion.Points); // Add points for correct answer
+      }
   
       alert(data.message);
       console.log("API Response:", data);
@@ -118,9 +135,16 @@ function StudentQuizTakingPage() {
   
     if (currentQuestionIndex < quiz.Questions.length - 1) {
       setCurrentQuestionIndex((prevIndex) => prevIndex + 1);
-    } else {
+
+      // Reset the answers based on question type
+      if (currentQuestion.Question_Type === "True or False" || currentQuestion.Question_Type === "Yes or No") {
+          setAnswers((prevAnswers) => ({ ...prevAnswers, [currentQuestion.id]: null })); // Clear answer
+      } else if (currentQuestion.Question_Type === "Identification") {
+          setCurrentIdentificationAnswer(""); // Clear identification answer
+      }
+  } else {
       navigate("/student/Result/Page", { state: { answers, quiz } });
-    }
+  }
   };
 
   const handleSubmitQuiz = () => {
@@ -128,6 +152,19 @@ function StudentQuizTakingPage() {
       handleNextQuestion();
     } else {
       navigate("/student/Result/Page", { state: { answers, quiz } });
+    }
+  };
+
+  const getDifficultyClass = (difficulty) => {
+    switch (difficulty) {
+      case "Easy":
+        return "bg-pink"; // Change to your desired color class for easy
+      case "Medium":
+        return "bg-midp"; // Your existing class for medium
+      case "Hard":
+        return "bg-darkp"; // Change to your desired color class for hard
+      default:
+        return ""; // No specific class if difficulty is not recognized
     }
   };
 
@@ -148,10 +185,13 @@ function StudentQuizTakingPage() {
     <div className="flex flex-col min-h-screen bg-custom-brownbg">
       <div className="p-4 md:py-6 flex flex-1 flex-col gap-5">
         <div className="flex-1 bg-white p-14 md:p-5 gap-4 w-full shadow-custom-darkblue rounded-md flex flex-col">
-          <div className="flex flex-col shad border bg-midp p-2 rounded-md">
+          <div className={`flex flex-col shad border p-2 rounded-md ${getDifficultyClass(currentQuestion.Difficulty_Level)}`}>
             <div className="text-lg font-bold text-left text-custom-brownbg">{quiz.Quiz_Name}</div>
             <div className="text-lg font-bold text-left text-custom-brownbg mb-2">
               {currentQuestionIndex + 1}/{questions.length}
+            </div>
+            <div className="text-lg font-bold text-left text-custom-brownbg">
+              Points: {currentPoints}/{totalPoints}
             </div>
             <div className="text-lg font-bold text-left text-custom-brownbg">
               Time Left: {timeLeft !== null ? formatTime(timeLeft) : "Loading..."}
@@ -159,7 +199,7 @@ function StudentQuizTakingPage() {
           </div>
 
           {currentQuestion ? (
-            <div className="flex flex-1 flex-col shad border items-center justify-center bg-midp p-2 rounded-md">
+            <div className={`flex flex-1 flex-col shad border items-center justify-center p-2 rounded-md ${getDifficultyClass(currentQuestion.Difficulty_Level)}`}>
               <div className="text-lg font-bold text-custom-brownbg">{currentQuestion.Question_Text}</div>
             </div>
           ) : (
@@ -247,4 +287,4 @@ function StudentQuizTakingPage() {
   );
 }
 
-export default StudentQuizTakingPage;
+export default StudentQuizTakingPage; // good code
