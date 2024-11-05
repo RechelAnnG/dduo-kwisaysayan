@@ -47,6 +47,15 @@ def check_answer():
     question_type = data.get('question_type')
     question_points = data.get('points')  # Get points from the request data
 
+    # Check if the answer is unattempted
+    if student_answers is None or (isinstance(student_answers, list) and len(student_answers) == 0):
+        response = {
+            'correct': False,
+            'message': 'Unattempted',
+            'points': 0  # No points for unattempted question
+        }
+        return jsonify(response)
+
     # Normalize and check answers
     if question_type == 'Multiple Choice':
         student_answers = set([ans.strip().lower() for ans in student_answers])
@@ -55,7 +64,7 @@ def check_answer():
     else:
         is_correct = student_answers.strip().lower() == correct_answers.strip().lower()
 
-  # Prepare response with points
+    # Prepare response with points
     response = {
         'correct': is_correct,
         'message': 'Correct' if is_correct else 'Incorrect',
