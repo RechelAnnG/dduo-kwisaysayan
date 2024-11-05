@@ -19,27 +19,8 @@ function StudentDashboardPage() {
                 if (!querySnapshot.empty) {
                     let quizData = { id: querySnapshot.docs[0].id, ...querySnapshot.docs[0].data() };
 
-                    // Shuffle questions by calling backend using fetch
-                    try {
-                        const response = await fetch('http://localhost:5000/shuffle-questions', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({ questions: quizData.Questions }),
-                        });
-
-                        if (response.ok) {
-                            const shuffledQuestions = await response.json();
-                            quizData.Questions = shuffledQuestions; // Replace with shuffled questions
-                        } else {
-                            console.error("Error shuffling questions: ", response.statusText);
-                        }
-                    } catch (shuffleError) {
-                        console.error("Error shuffling questions:", shuffleError);
-                    }
-
-                    navigate("/student/Quiz", { state: { quiz: quizData } }); // Pass quiz data to QuizTakingPage
+                    // Pass quiz data to QuizTakingPage without shuffling
+                    navigate("/student/Quiz", { state: { quiz: quizData } });
                 } else {
                     alert("Invalid quiz code. Please try again.");
                 }
@@ -73,7 +54,7 @@ function StudentDashboardPage() {
                         </div>
 
                         <div className="flex ">
-                        <img src={profilePic} alt="Profile" className="w-24 justify-center  items-center h-24 rounded-full" />
+                            <img src={profilePic} alt="Profile" className="w-24 justify-center  items-center h-24 rounded-full" />
                         </div>
                     </div>
 
@@ -97,7 +78,7 @@ function StudentDashboardPage() {
                 <div className="mt-12 w-full">
                     <h2 className="text-2xl text-left font-bold mb-4">Recent Activities</h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {[ {
+                        {[{
                             title: "Rizal - Student to Lover",
                             type: "Assigned",
                             count: 10,

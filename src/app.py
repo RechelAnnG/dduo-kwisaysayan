@@ -38,5 +38,27 @@ def shuffle_questions():
     selected_and_shuffled = random_select_and_shuffle_questions(questions_by_type)
     return jsonify(selected_and_shuffled)
 
+# Logic for checking if the answer is correct
+@app.route('/check-answer', methods=['POST'])
+def check_answer():
+    data = request.json
+    student_answers = data.get('answer')
+    correct_answers = data.get('correct_answer')  # Assume this can be a list for multiple choice
+    question_type = data.get('question_type')
+
+    # Normalize and check answers
+    if question_type == 'Multiple Choice':
+        student_answers = set([ans.strip().lower() for ans in student_answers])
+        correct_answers = set([ans.strip().lower() for ans in correct_answers])
+        is_correct = student_answers == correct_answers
+    else:
+        is_correct = student_answers.strip().lower() == correct_answers.strip().lower()
+
+    response = {
+        'correct': is_correct,
+        'message': 'Correct' if is_correct else 'Incorrect'
+    }
+    return jsonify(response)
+
 if __name__ == '__main__':
     app.run(debug=True)

@@ -62,8 +62,11 @@ function EditQuizPage() {
       Status: status,
       Number_Of_Questions: selectedQuestions.length,
       Questions: questionsData,
-      Accuracy: { easy: easyAccuracy, medium: mediumAccuracy, hard: hardAccuracy }, // Save the accuracies separately
-
+      Accuracy: {
+        easy: parseFloat(easyAccuracy) || 0,
+        medium: parseFloat(mediumAccuracy) || 0,
+        hard: parseFloat(hardAccuracy) || 0,
+      }, // Save accuracies as numbers
     });
 
     navigate("/Teacher/Library");
@@ -259,4 +262,4 @@ function EditQuizPage() {
   );
 }
 
-export default EditQuizPage;
+export default EditQuizPage; // temporary working correctly
